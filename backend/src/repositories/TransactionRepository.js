@@ -65,11 +65,33 @@ export class TransactionRepository {
 
     async getDashboardSummary(userId) {
         const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-        // Fetch everything once for absolute consistency
-        const [allTransactions, budgets, categories] = await Promise.all([
-            prisma.transaction.findMany({
+        // 1. Fetch Totals and Budgets in parallel
+        const [stats, historyStats, monthlyTransactions, budgets, categories] = await Promise.all([
+            // All-time totals (approximated as SUM in DB is faster than manual loops)
+            prisma.transaction.groupBy({
+                by: ['userId'],
                 where: { userId },
+                _sum: { amount: true },
+            }),
+            // Last 6 months history
+            prisma.transaction.findMany({
+                where: {
+                    userId,
+                    date: {
+                        gte: new Date(now.getFullYear(), now.getMonth() - 5, 1)
+                    }
+                },
+                include: { category: true }
+            }),
+            // Current month transactions for breakdown
+            prisma.transaction.findMany({
+                where: {
+                    userId,
+                    date: { gte: startOfMonth, lte: endOfMonth }
+                },
                 include: { category: true }
             }),
             prisma.budget.findMany({
@@ -79,64 +101,69 @@ export class TransactionRepository {
             prisma.category.findMany({ where: { userId } })
         ]);
 
-        // 1. All-time and Monthly Totals
-        let total_income = 0;
-        let total_expenses = 0;
+        // 2. Process Monthly Data
         let month_income = 0;
         let month_expenses = 0;
-
-        // 2. Category Breakdown (Current Month)
         const breakdownMap = new Map();
+
         categories.forEach(c => {
-            breakdownMap.set(c.id, {
-                category_name: c.name,
-                category_type: c.type,
-                total_amount: 0
-            });
+            breakdownMap.set(c.id, { category_name: c.name, category_type: c.type, total_amount: 0 });
         });
 
-        // 3. History (Last 6 Months)
+        monthlyTransactions.forEach(t => {
+            const amountUSD = convertToUSD(t.amount, t.currency);
+            if (t.category.type === 'INCOME') {
+                month_income += amountUSD;
+            } else {
+                month_expenses += amountUSD;
+                const catData = breakdownMap.get(t.categoryId);
+                if (catData) catData.total_amount += amountUSD;
+            }
+        });
+
+        // 3. Process History (Last 6 Months)
         const historyMap = new Map();
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
             const key = `${d.getFullYear()}-${d.getMonth()}`;
-            historyMap.set(key, {
-                month: d.toLocaleString('default', { month: 'short' }),
-                income: 0,
-                expense: 0
-            });
+            historyMap.set(key, { month: d.toLocaleString('default', { month: 'short' }), income: 0, expense: 0 });
         }
 
-        // Single pass calculation
-        allTransactions.forEach(t => {
+        historyStats.forEach(t => {
             const txDate = new Date(t.date);
-            const amountUSD = convertToUSD(t.amount, t.currency);
-            const type = t.category.type;
-
-            // Global totals
-            if (type === 'INCOME') total_income += amountUSD;
-            else total_expenses += amountUSD;
-
-            // Monthly breakdown & totals
-            if (isSameMonth(txDate, now)) {
-                if (type === 'INCOME') month_income += amountUSD;
-                else {
-                    month_expenses += amountUSD;
-                    const catData = breakdownMap.get(t.categoryId);
-                    if (catData) catData.total_amount += amountUSD;
-                }
-            }
-
-            // History
             const histKey = `${txDate.getFullYear()}-${txDate.getMonth()}`;
             if (historyMap.has(histKey)) {
+                const amountUSD = convertToUSD(t.amount, t.currency);
                 const h = historyMap.get(histKey);
-                if (type === 'INCOME') h.income += amountUSD;
+                if (t.category.type === 'INCOME') h.income += amountUSD;
                 else h.expense += amountUSD;
             }
         });
 
-        // Finalize budget comparison
+        // 4. Calculate Global Totals (We'll use a single query for this now)
+        const totals = await prisma.transaction.groupBy({
+            by: ['userId'],
+            where: { userId },
+            _sum: { amount: true }
+        });
+        // Note: For multi-currency, a single group-by sum isn't 100% accurate if currencies differ.
+        // But for dashboard speed, we retrieve only what we need.
+        // Let's refine global totals to be more accurate but still fast.
+        let total_income = 0;
+        let total_expenses = 0;
+
+        // Fetching aggregate by category type is better
+        const typeTotals = await prisma.transaction.findMany({
+            where: { userId },
+            select: { amount: true, currency: true, category: { select: { type: true } } }
+        });
+
+        typeTotals.forEach(t => {
+            const amountUSD = convertToUSD(t.amount, t.currency);
+            if (t.category.type === 'INCOME') total_income += amountUSD;
+            else total_expenses += amountUSD;
+        });
+
         const budgetComparison = budgets.map(b => {
             const actual = breakdownMap.get(b.categoryId)?.total_amount || 0;
             return {

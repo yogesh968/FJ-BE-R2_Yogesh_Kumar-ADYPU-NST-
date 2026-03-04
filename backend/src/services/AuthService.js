@@ -111,17 +111,15 @@ export class AuthService {
 
     async seedDefaultCategories(userId) {
         const defaults = [
-            { name: "Salary", type: "INCOME" },
-            { name: "Investment", type: "INCOME" },
-            { name: "Rent", type: "EXPENSE" },
-            { name: "Groceries", type: "EXPENSE" },
-            { name: "Utilities", type: "EXPENSE" },
-            { name: "Entertainment", type: "EXPENSE" },
-            { name: "Transport", type: "EXPENSE" }
+            { name: "Salary", type: "INCOME", userId },
+            { name: "Investment", type: "INCOME", userId },
+            { name: "Rent", type: "EXPENSE", userId },
+            { name: "Groceries", type: "EXPENSE", userId },
+            { name: "Utilities", type: "EXPENSE", userId },
+            { name: "Entertainment", type: "EXPENSE", userId },
+            { name: "Transport", type: "EXPENSE", userId }
         ];
 
-        for (const cat of defaults) {
-            await categoryRepository.createCategory({ ...cat, userId }).catch(() => { });
-        }
+        await categoryRepository.createManyCategories(defaults);
     }
 }

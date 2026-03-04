@@ -5,6 +5,10 @@ export class CategoryRepository {
         return prisma.category.create({ data });
     }
 
+    async createManyCategories(data) {
+        return prisma.category.createMany({ data, skipDuplicates: true });
+    }
+
     async findByUserId(userId) {
         return prisma.category.findMany({ where: { userId } });
     }

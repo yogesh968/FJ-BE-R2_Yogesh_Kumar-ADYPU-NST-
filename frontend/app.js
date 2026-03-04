@@ -1,4 +1,5 @@
 const API_URL = 'https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app/api/v1';
+// const API_URL = 'http://localhost:3000/api/v1';
 let token = localStorage.getItem('token');
 let charts = { trend: null, category: null, budget: null };
 
@@ -96,25 +97,49 @@ function toggleAuth() {
 
 // --- Auth Handling ---
 async function login() {
+    const btn = document.querySelector('#auth-modal .btn-primary');
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const title = document.getElementById('auth-title').innerText;
+    const mode = document.getElementById('auth-title').innerText === 'Welcome back' ? 'login' : 'register';
 
     if (!email || !password) return showToast('Email and password required', 'error');
 
+    // Add loading state
+    const originalText = btn.innerText;
+    btn.innerText = mode === 'login' ? 'Logging in...' : 'Creating account...';
+    btn.disabled = true;
+
     try {
-        if (title !== 'Welcome back') {
-            await apiRequest('/auth/register', 'POST', { email, password, name: email.split('@')[0] });
+        if (mode === 'register') {
+            try {
+                await apiRequest('/auth/register', 'POST', { email, password, name: email.split('@')[0] });
+            } catch (err) {
+                // If user already exists, transition to login flow automatically
+                if (err.message === 'User already exists') {
+                    showToast('Account already exists. Signing you in...', 'info');
+                    openAuthModal('login');
+                } else {
+                    throw err;
+                }
+            }
         }
+
         const res = await apiRequest('/auth/login', 'POST', { email, password });
         token = res.data.accessToken;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
-        showToast('Login successful');
-        window.location.hash = 'dashboard';
-        checkAuth();
+        showToast('Success! Redirecting...');
+
+        // Add a slight delay for smooth transition feel
+        setTimeout(() => {
+            window.location.hash = 'dashboard';
+            checkAuth();
+        }, 500);
+
     } catch (err) {
         showToast(err.message || 'Authentication failed', 'error');
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }
 
@@ -431,6 +456,7 @@ async function fetchCategories(typeFilter = null) {
 }
 
 async function addTransaction() {
+    const btn = document.querySelector('#transaction-modal .btn-primary');
     const amount = document.getElementById('tr-amount').value;
     const currency = document.getElementById('tr-currency').value;
     const date = document.getElementById('tr-date').value;
@@ -439,6 +465,11 @@ async function addTransaction() {
     const receiptFile = document.getElementById('tr-receipt').files[0];
 
     if (!amount || !date) return showToast('Amount and date required', 'error');
+
+    // Add loading state
+    const originalText = btn.innerText;
+    btn.innerText = 'Saving...';
+    btn.disabled = true;
 
     try {
         const formData = new FormData();
@@ -458,12 +489,20 @@ async function addTransaction() {
         document.getElementById('receipt-label').innerHTML = '<p style="font-size: 0.85rem; color: var(--text-muted);">Click or drag receipt photo</p>';
     } catch (err) {
         showToast(err.message || 'Error saving transaction', 'error');
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }
 
 async function updateProfile() {
+    const btn = document.querySelector('button[onclick="updateProfile()"]');
     const name = document.getElementById('update-name').value;
     const password = document.getElementById('update-password').value;
+
+    const originalText = btn.innerText;
+    btn.innerText = 'Updating...';
+    btn.disabled = true;
 
     try {
         const res = await apiRequest('/auth/profile', 'PATCH', { name, ...(password && { password }) });
@@ -472,21 +511,34 @@ async function updateProfile() {
         updateTopLevelUserUI();
     } catch (err) {
         showToast('Update failed', 'error');
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }
 
 async function addBudget() {
+    const btn = document.querySelector('#budget-modal .btn-primary');
     const amount = document.getElementById('bg-amount').value;
     const catId = document.getElementById('bg-category').value;
     const month = document.getElementById('bg-month').value;
     const year = document.getElementById('bg-year').value;
+
+    const originalText = btn.innerText;
+    btn.innerText = 'Saving...';
+    btn.disabled = true;
 
     try {
         await apiRequest('/budgets', 'POST', { amount: parseFloat(amount), categoryId: catId, month: parseInt(month), year: parseInt(year) });
         showToast('Budget saved');
         closeModal('budget-modal');
         refreshData(); // Triggers global update for all sections
-    } catch (err) { showToast('Error saving budget', 'error'); }
+    } catch (err) {
+        showToast('Error saving budget', 'error');
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
 }
 
 function renderBudgetList(budgets) {
@@ -683,6 +735,11 @@ async function generateDemoData() {
     }
 }
 
+
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.toggle('open');
+}
 
 // --- Navigation ---
 function showSection(id, event = null, updateHash = true) {

@@ -35,6 +35,7 @@ model Category {
   createdAt     DateTime       @default(now())
 
   @@unique([name, userId])
+  @@index([userId])
 }
 
 
@@ -70,6 +71,7 @@ model Budget {
   createdAt     DateTime       @default(now())
 
   @@unique([userId, categoryId, month, year])
+  @@index([userId, month, year])
 }
 
 model Receipt {

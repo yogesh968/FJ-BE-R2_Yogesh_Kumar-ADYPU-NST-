@@ -123,11 +123,24 @@
 
     <!-- Application Dashboard Section -->
     <div id="app-page" class="app-wrapper hidden">
-        <aside>
+        <!-- Mobile Header -->
+        <div class="mobile-header">
             <div class="nav-logo">FINANCE FJ</div>
+            <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <div class="nav-logo">FINANCE FJ</div>
+                <button class="close-sidebar-btn" onclick="toggleMobileSidebar()">×</button>
+            </div>
             <ul class="sidebar-nav">
                 <li id="nav-dashboard" class="active">
-                    <a href="#dashboard">
+                    <a href="#dashboard" onclick="if(window.innerWidth <= 1024) toggleMobileSidebar()">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
                             <path
@@ -138,7 +151,7 @@
                     </a>
                 </li>
                 <li id="nav-transactions">
-                    <a href="#transactions">
+                    <a href="#transactions" onclick="if(window.innerWidth <= 1024) toggleMobileSidebar()">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
                             <path
@@ -149,7 +162,7 @@
                     </a>
                 </li>
                 <li id="nav-budgets">
-                    <a href="#budgets">
+                    <a href="#budgets" onclick="if(window.innerWidth <= 1024) toggleMobileSidebar()">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
                             <path
@@ -160,7 +173,7 @@
                     </a>
                 </li>
                 <li id="nav-profile">
-                    <a href="#profile">
+                    <a href="#profile" onclick="if(window.innerWidth <= 1024) toggleMobileSidebar()">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                             viewBox="0 0 24 24">
                             <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
