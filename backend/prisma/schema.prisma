@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String?
+  name          String?
+  avatar        String?
+  googleId      String?        @unique
+  refreshToken  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  categories    Category[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  receipts      Receipt[]
+}
+
+model Category {
+  id            String         @id @default(uuid())
+  name          String
+  type          String
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  budgets       Budget[]
+  createdAt     DateTime       @default(now())
+
+  @@unique([name, userId])
+}
+
+
+
+model Transaction {
+  id            String         @id @default(uuid())
+  amount        Float
+  date          DateTime
+  description   String?
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receiptId     String?        @unique
+  receipt       Receipt?       @relation(fields: [receiptId], references: [id])
+  currency      String         @default("USD")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId, date])
+  @@index([categoryId])
+}
+
+model Budget {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  amount        Float
+  month         Int
+  year          Int
+  createdAt     DateTime       @default(now())
+
+  @@unique([userId, categoryId, month, year])
+}
+
+model Receipt {
+  id            String         @id @default(uuid())
+  filePath      String
+  fileType      String
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction   Transaction?
+  createdAt     DateTime       @default(now())
+}
+
+model CurrencyRate {
+  id              String   @id @default(uuid())
+  baseCurrency    String
+  targetCurrency  String
+  rate            Float
+  date            DateTime @default(now())
+
+  @@unique([baseCurrency, targetCurrency, date])
+}
