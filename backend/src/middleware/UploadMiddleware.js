@@ -6,8 +6,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const receiptDir = path.join(__dirname, "../../../uploads/receipts");
-const avatarDir = path.join(__dirname, "../../../uploads/avatars");
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === "production";
+const baseUploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../../../uploads");
+
+const receiptDir = path.join(baseUploadDir, "receipts");
+const avatarDir = path.join(baseUploadDir, "avatars");
 
 // Ensure directories exist
 [receiptDir, avatarDir].forEach(dir => {
