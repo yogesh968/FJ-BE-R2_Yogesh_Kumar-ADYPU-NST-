@@ -50,6 +50,14 @@
 </head>
 
 <body>
+    <!-- Global Loader -->
+    <div id="global-loader">
+        <div class="nav-logo" style="margin-bottom: 1rem; font-size: 2rem;">FINANCE FJ</div>
+        <div class="spinner" style="border-width: 3px; width: 40px; height: 40px; border-top-color: var(--primary);">
+        </div>
+        <p style="margin-top: 1rem; color: var(--text-muted); font-weight: 500;">Securing your workspace...</p>
+    </div>
+
     <!-- Landing Page Section -->
     <div id="landing-page">
         <div class="landing-bg-glow"></div>
@@ -292,13 +300,13 @@
                         <h4>Total Savings</h4>
                         <div class="stat-value" id="total-balance">$0.00</div>
                     </div>
-                    <div class="card stat-card">
+                    <div class="card stat-card success-border">
                         <h4>Total Income</h4>
                         <div class="stat-value" id="total-income" style="color: var(--success);">$0.00</div>
                         <p class="month-indicator">This month: <span id="month-income"
                                 style="font-weight: 700; color: var(--success);">$0</span></p>
                     </div>
-                    <div class="card stat-card">
+                    <div class="card stat-card danger-border">
                         <h4>Total Spent</h4>
                         <div class="stat-value" id="total-expenses" style="color: var(--danger);">$0.00</div>
                         <p class="month-indicator">This month: <span id="month-expenses"
@@ -325,10 +333,21 @@
                     </div>
 
                     <div class="card col-span-12">
-                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Budget vs Actual (This
-                            Month)</h3>
-                        <div class="chart-wrapper" style="height: 300px;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Budget Execution Detail
+                        </h3>
+                        <div class="chart-wrapper" style="height: 350px;">
                             <canvas id="budgetChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card col-span-12">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">Daily Spending Intensity</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Last 30 Days</span>
+                        </div>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="dailyChart"></canvas>
                         </div>
                     </div>
 

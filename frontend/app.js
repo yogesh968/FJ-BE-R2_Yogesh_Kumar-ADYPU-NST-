@@ -105,8 +105,8 @@ async function login() {
     if (!email || !password) return showToast('Email and password required', 'error');
 
     // Add loading state
-    const originalText = btn.innerText;
-    btn.innerText = mode === 'login' ? 'Logging in...' : 'Creating account...';
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<div class="spinner"></div>`;
     btn.disabled = true;
 
     try {
@@ -138,7 +138,7 @@ async function login() {
 
     } catch (err) {
         showToast(err.message || 'Authentication failed', 'error');
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
@@ -193,7 +193,12 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
     try {
         const res = await fetch(`${API_URL}${endpoint}`, options);
-        // Handle non-JSON or error responses gracefully
+        if (res.status === 401) {
+            console.error('Session expired or unauthorized');
+            logout();
+            throw new Error('Please sign in again');
+        }
+
         const contentType = res.headers.get('content-type');
         let data;
         if (contentType && contentType.includes('application/json')) {
@@ -205,24 +210,25 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
         if (!res.ok) throw data;
         return data;
     } catch (err) {
-        if (err.statusCode === 401 || err.message === 'Unauthorized') logout();
         throw err;
     }
 }
 
 // --- Dashboard & Data ---
 async function refreshData() {
+    const loader = document.getElementById('global-loader');
     console.log('Starting data refresh...');
     try {
         await fetchCategories();
 
         const [dashRes, txRes] = await Promise.all([
             apiRequest('/dashboard').catch(e => { console.error('Dash error', e); return { data: null }; }),
-            apiRequest('/transactions?limit=50').catch(e => { console.error('Tx error', e); return { data: { transactions: [] } }; })
+            apiRequest('/transactions?limit=100').catch(e => { console.error('Tx error', e); return { data: { transactions: [] } }; })
         ]);
 
         if (!dashRes || !dashRes.data) {
             console.warn('Dashboard data missing');
+            if (loader) loader.classList.add('fade-out');
             return;
         }
 
@@ -239,7 +245,7 @@ async function refreshData() {
         document.getElementById('month-expenses').innerText = formatCurrency(monthly.month_expenses);
 
         renderCharts(transactions, summary.total_savings, dashRes.data.breakdown, history, monthly.budgetComparison);
-        renderRecentActivity(transactions);
+        renderRecentActivity(transactions.slice(0, 10));
 
         const currentHash = window.location.hash.replace('#', '') || 'dashboard';
         if (currentHash === 'transactions') fetchTransactions();
@@ -249,6 +255,8 @@ async function refreshData() {
     } catch (err) {
         console.error('Data refresh fatal error', err);
         showToast('Connection error. Please refresh.', 'error');
+    } finally {
+        if (loader) loader.classList.add('fade-out');
     }
 }
 
@@ -397,7 +405,7 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history, 
                         data: bBudgetData.length ? bBudgetData : [0],
                         backgroundColor: '#e5e7eb',
                         borderRadius: 4,
-                        barThickness: 30
+                        barThickness: 25
                     },
                     {
                         label: 'Actual Spend',
@@ -409,14 +417,14 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history, 
                             return actual > budget ? '#f87171' : '#6366f1';
                         },
                         borderRadius: 4,
-                        barThickness: 30
+                        barThickness: 25
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y', // Horizontal bars for easier reading of categories
+                indexAxis: 'y',
                 plugins: {
                     legend: {
                         position: 'top',
@@ -430,6 +438,55 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history, 
                         ticks: { callback: (v) => '$' + v }
                     },
                     y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 4. Daily Spending Intensity (Line Chart)
+    const dailyCtx = document.getElementById('dailyChart')?.getContext('2d');
+    if (dailyCtx) {
+        if (charts.daily) charts.daily.destroy();
+
+        // Group last 30 days transactions by day
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const dailyGroups = {};
+
+        for (let i = 0; i < 30; i++) {
+            const d = new Date(thirtyDaysAgo.getTime() + (i * 24 * 60 * 60 * 1000));
+            dailyGroups[d.toISOString().split('T')[0]] = 0;
+        }
+
+        transactions.forEach(t => {
+            const dStr = t.date.split('T')[0];
+            if (dailyGroups[dStr] !== undefined && t.category.type === 'EXPENSE') {
+                dailyGroups[dStr] += t.amount;
+            }
+        });
+
+        charts.daily = new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: Object.keys(dailyGroups).map(k => k.split('-')[2]), // only days
+                datasets: [{
+                    label: 'Daily Spend',
+                    data: Object.values(dailyGroups),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f3f4f6' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
                 }
             }
         });
@@ -467,8 +524,8 @@ async function addTransaction() {
     if (!amount || !date) return showToast('Amount and date required', 'error');
 
     // Add loading state
-    const originalText = btn.innerText;
-    btn.innerText = 'Saving...';
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<div class="spinner"></div>`;
     btn.disabled = true;
 
     try {
@@ -490,7 +547,7 @@ async function addTransaction() {
     } catch (err) {
         showToast(err.message || 'Error saving transaction', 'error');
     } finally {
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
@@ -500,8 +557,8 @@ async function updateProfile() {
     const name = document.getElementById('update-name').value;
     const password = document.getElementById('update-password').value;
 
-    const originalText = btn.innerText;
-    btn.innerText = 'Updating...';
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<div class="spinner"></div>`;
     btn.disabled = true;
 
     try {
@@ -512,7 +569,7 @@ async function updateProfile() {
     } catch (err) {
         showToast('Update failed', 'error');
     } finally {
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
@@ -524,8 +581,8 @@ async function addBudget() {
     const month = document.getElementById('bg-month').value;
     const year = document.getElementById('bg-year').value;
 
-    const originalText = btn.innerText;
-    btn.innerText = 'Saving...';
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<div class="spinner"></div>`;
     btn.disabled = true;
 
     try {
@@ -536,7 +593,7 @@ async function addBudget() {
     } catch (err) {
         showToast('Error saving budget', 'error');
     } finally {
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }

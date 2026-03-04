@@ -594,6 +594,86 @@ main {
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* UI Polishing & Interactive Feedback */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border-left: 4px solid var(--primary);
+}
+
+.success-border {
+  border-left-color: var(--success) !important;
+}
+
+.danger-border {
+  border-left-color: var(--danger) !important;
+}
+
+/* Dashboard Grid Enhancements */
+.stats-grid .card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stats-grid .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Global Loading State */
+#global-loader {
+  position: fixed;
+  inset: 0;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+#global-loader.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 640px) {
   .budget-grid {
