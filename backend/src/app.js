@@ -27,11 +27,12 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", `http://localhost:${process.env.PORT || 3000}`],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            connectSrc: ["'self'", "http://localhost:3000", process.env.FRONTEND_URL || "https://fjproject.vercel.app"]
+            connectSrc: ["'self'", "http://localhost:3000", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
         }
     }
 }));
