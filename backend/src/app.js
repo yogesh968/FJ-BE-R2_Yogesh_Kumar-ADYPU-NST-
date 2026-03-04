@@ -14,8 +14,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
-
 const app = express();
+
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    process.env.FRONTEND_URL || 'https://fjproject.vercel.app'
+];
 
 // Middleware
 app.use(helmet({
@@ -26,14 +31,26 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", `http://localhost:${process.env.PORT || 3000}`],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            connectSrc: ["'self'", "http://localhost:3000"]
+            connectSrc: ["'self'", "http://localhost:3000", process.env.FRONTEND_URL || "https://fjproject.vercel.app"]
         }
     }
 }));
 
 // Serve uploads
 app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
-app.use(cors());
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Postman) or from allowed list
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
+
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
