@@ -35,10 +35,14 @@ export const errorHandler = (
 
     console.error("CRITICAL ERROR:", err);
 
+    const isPrismaError = (typeof err.code === 'string' && err.code.startsWith('P'));
+
     return res.status(500).json({
         success: false,
         message: "Internal Server Error",
         error: err.message,
-        stack: err.stack, // Temporarily enabling stack trace to debug 500
+        isPrisma: isPrismaError,
+        prismaCode: err.code,
+        stack: err.stack,
     });
 };
