@@ -52,11 +52,11 @@ function populateTimeDropdowns() {
     const monthOptions = months.map((m, i) => `<option value="${i + 1}" ${i + 1 === currentMonth ? 'selected' : ''}>${m}</option>`).join('');
     const yearOptions = [currentYear - 1, currentYear, currentYear + 1].map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
 
-    ['bg-view-month', 'bg-month'].forEach(id => {
+    ['bg-view-month', 'bg-month', 'tx-view-month'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = monthOptions;
     });
-    ['bg-view-year', 'bg-year'].forEach(id => {
+    ['bg-view-year', 'bg-year', 'tx-view-year'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = yearOptions;
     });
@@ -243,7 +243,7 @@ async function refreshData() {
         document.getElementById('month-expenses').innerText = formatCurrency(monthly.month_expenses);
 
         renderCharts(transactions, summary.total_savings, dashRes.data.breakdown, history, monthly.budgetComparison);
-        renderRecentActivity(transactions.slice(0, 10));
+        renderRecentActivity(transactions);
 
         const currentHash = window.location.hash.replace('#', '') || 'dashboard';
         if (currentHash === 'transactions') fetchTransactions();
@@ -683,17 +683,27 @@ async function fetchBudgets() {
 }
 
 async function fetchTransactions() {
+    const container = document.getElementById('transaction-list');
+    const month = document.getElementById('tx-view-month').value;
+    const year = document.getElementById('tx-view-year').value;
+
+    container.innerHTML = '<div style="padding: 2rem; text-align: center;"><div class="spinner" style="border-top-color: var(--primary); margin: 0 auto;"></div></div>';
+
     try {
-        const res = await apiRequest('/transactions?limit=50');
-        const list = document.getElementById('transaction-list');
-        list.innerHTML = `
+        const res = await apiRequest(`/transactions?month=${month}&year=${year}`);
+        if (!res.data.transactions.length) {
+            container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No records found for this period.</p>';
+            return;
+        }
+
+        container.innerHTML = `
             <table style="width: 100%; border-collapse: collapse;">
-                <thead style="text-align: left; color: var(--text-muted); font-size: 0.85rem;">
-                    <tr>
-                        <th style="padding: 1rem 0;">Date</th>
-                        <th style="padding: 1rem 0;">Description</th>
-                        <th style="padding: 1rem 0;">Category</th>
-                        <th style="text-align: right; padding: 1rem 0;">Amount</th>
+                <thead>
+                    <tr style="text-align: left; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <th style="padding-bottom: 1rem;">Date</th>
+                        <th style="padding-bottom: 1rem;">Description</th>
+                        <th style="padding-bottom: 1rem;">Category</th>
+                        <th style="padding-bottom: 1rem; text-align: right;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -702,7 +712,9 @@ async function fetchTransactions() {
                             <td style="padding: 1rem 0; font-size: 0.9rem;">${new Date(t.date).toLocaleDateString()}</td>
                             <td style="padding: 1rem 0; font-weight: 500;">${t.description || '-'}</td>
                             <td style="padding: 1rem 0; font-size: 0.9rem; color: var(--text-muted);">${t.category.name}</td>
-                            <td style="text-align: right; padding: 1rem 0; font-weight: 600;">${formatCurrency(t.amount, t.currency)}</td>
+                            <td style="text-align: right; padding: 1rem 0; font-weight: 600; color: ${t.category.type === 'INCOME' ? 'var(--success)' : 'var(--text-main)'}">
+                                ${t.category.type === 'INCOME' ? '+' : '-'}${formatCurrency(t.amount, t.currency)}
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -711,6 +723,36 @@ async function fetchTransactions() {
     } catch (err) {
         showToast('Failed to load transactions', 'error');
         console.error(err);
+    }
+}
+
+async function exportData(type) {
+    const month = document.getElementById('tx-view-month').value;
+    const year = document.getElementById('tx-view-year').value;
+    const endpoint = type === 'csv' ? '/reports/export-csv' : '/reports/export-pdf';
+
+    showToast(`Generating ${type.toUpperCase()} statement...`, 'info');
+
+    try {
+        const response = await fetch(`${API_URL}${endpoint}?month=${month}&year=${year}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `statement_${month}_${year}.${type}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        showToast('Statement downloaded successfully');
+    } catch (err) {
+        showToast('Export failed. Please try again.', 'error');
     }
 }
 
@@ -904,3 +946,21 @@ document.getElementById('tr-receipt')?.addEventListener('change', function (e) {
         label.innerHTML = `<svg width="24" height="24" fill="none" stroke="var(--success)" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg><p style="color: var(--success); font-weight: 600;">${this.files[0].name}</p>`;
     }
 });
+
+// Global exports
+window.exportData = exportData;
+window.fetchTransactions = fetchTransactions;
+window.fetchBudgets = fetchBudgets;
+window.updateProfile = updateProfile;
+window.addTransaction = addTransaction;
+window.addBudget = addBudget;
+window.uploadAvatar = uploadAvatar;
+window.closeModal = closeModal;
+window.openTransactionModal = openTransactionModal;
+window.openBudgetModal = openBudgetModal;
+window.toggleMobileSidebar = toggleMobileSidebar;
+window.logout = logout;
+window.login = login;
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.toggleAuth = toggleAuth;

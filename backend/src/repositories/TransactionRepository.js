@@ -38,7 +38,13 @@ export class TransactionRepository {
     }
 
     async findAll(userId, filters) {
-        const { startDate, endDate, categoryId, sortBy, order, page = 1, limit = 10 } = filters;
+        let { startDate, endDate, categoryId, sortBy, order, page = 1, limit = 100, month, year } = filters;
+
+        if (month && year) {
+            startDate = new Date(year, month - 1, 1);
+            endDate = new Date(year, month, 0); // Last day of month
+            endDate.setHours(23, 59, 59, 999);
+        }
 
         const query = {
             where: {

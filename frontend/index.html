@@ -292,13 +292,13 @@
                         <h4>Total Savings</h4>
                         <div class="stat-value" id="total-balance">$0.00</div>
                     </div>
-                    <div class="card stat-card success-border">
+                    <div class="card stat-card">
                         <h4>Total Income</h4>
                         <div class="stat-value" id="total-income" style="color: var(--success);">$0.00</div>
                         <p class="month-indicator">This month: <span id="month-income"
                                 style="font-weight: 700; color: var(--success);">$0</span></p>
                     </div>
-                    <div class="card stat-card danger-border">
+                    <div class="card stat-card">
                         <h4>Total Spent</h4>
                         <div class="stat-value" id="total-expenses" style="color: var(--danger);">$0.00</div>
                         <p class="month-indicator">This month: <span id="month-expenses"
@@ -307,17 +307,14 @@
                 </div>
 
                 <div class="dashboard-main">
-                    <div class="card col-span-8">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                            <h3 style="font-size: 1.1rem; font-weight: 600;">Cash Flow Summary</h3>
-                        </div>
-                        <div class="chart-wrapper" style="height: 350px;">
+                    <div class="card col-span-8 chart-card">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Cash Flow Trend</h3>
+                        <div class="chart-wrapper" style="height: 300px;">
                             <canvas id="trendChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="card col-span-4">
+                    <div class="card col-span-4 chart-card">
                         <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Expense Allocation</h3>
                         <div class="chart-wrapper" style="height: 300px;">
                             <canvas id="categoryChart"></canvas>
@@ -357,8 +354,41 @@
 
             <!-- Transactions Section -->
             <section id="transactions" class="hidden">
-                <h2 style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">
-                    Transaction History</h2>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+                    <div>
+                        <h2
+                            style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+                            Transaction History</h2>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select id="tx-view-month" onchange="fetchTransactions()" class="form-control-sm"
+                                style="width: 140px; padding: 4px 8px; border-radius: 6px;"></select>
+                            <select id="tx-view-year" onchange="fetchTransactions()" class="form-control-sm"
+                                style="width: 100px; padding: 4px 8px; border-radius: 6px;"></select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn btn-outline" onclick="exportData('csv')"
+                            style="font-size: 0.85rem; padding: 0.6rem 1rem;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24" style="margin-right: 4px;">
+                                <path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            Export CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportData('pdf')"
+                            style="font-size: 0.85rem; padding: 0.6rem 1rem;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24" style="margin-right: 4px;">
+                                <path
+                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Export PDF
+                        </button>
+                        <button class="btn btn-primary" onclick="openTransactionModal()"
+                            style="font-size: 0.85rem; padding: 0.6rem 1rem;">+ Add Transaction</button>
+                    </div>
+                </div>
                 <div class="card" id="transaction-list">
                     <!-- Populated by JS -->
                 </div>

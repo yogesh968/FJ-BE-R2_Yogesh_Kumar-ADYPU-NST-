@@ -70,6 +70,7 @@ router.delete("/budgets/:id", authMiddleware, budgetController.deleteBudget);
 // Reporting routes
 router.get("/reports/monthly", authMiddleware, reportingController.getMonthlyReport);
 router.get("/reports/export-csv", authMiddleware, reportingController.exportCSV);
+router.get("/reports/export-pdf", authMiddleware, reportingController.exportPDF);
 
 // Dashboard
 router.get("/dashboard", authMiddleware, transactionController.getDashboard);

@@ -21,10 +21,25 @@ export class ReportingController {
 
     async exportCSV(req, res, next) {
         try {
-            const csv = await reportingService.exportTransactionsCSV(req.user.id);
+            const month = parseInt(req.query.month);
+            const year = parseInt(req.query.year);
+            const csv = await reportingService.exportTransactionsCSV(req.user.id, month, year);
             res.header("Content-Type", "text/csv");
-            res.attachment("transactions.csv");
+            res.attachment(`transactions_${month || 'all'}_${year || ''}.csv`);
             res.send(csv);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async exportPDF(req, res, next) {
+        try {
+            const month = parseInt(req.query.month);
+            const year = parseInt(req.query.year);
+            const pdfBuffer = await reportingService.exportTransactionsPDF(req.user.id, month, year);
+            res.header("Content-Type", "application/pdf");
+            res.attachment(`statement_${month || 'all'}_${year || ''}.pdf`);
+            res.send(pdfBuffer);
         } catch (error) {
             next(error);
         }
