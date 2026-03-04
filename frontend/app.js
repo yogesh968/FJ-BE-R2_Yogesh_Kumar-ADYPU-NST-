@@ -3,6 +3,13 @@ const API_URL = 'https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app/api/v1';
 let token = localStorage.getItem('token');
 let charts = { trend: null, category: null, budget: null };
 
+const getFullImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const baseUrl = API_URL.replace('/api/v1', '');
+    return `${baseUrl}${path}`;
+};
+
 // --- Initialization & Auth Check ---
 function checkAuth() {
     const landingPage = document.getElementById('landing-page');
@@ -37,7 +44,7 @@ function updateTopLevelUserUI() {
     if (sideName) sideName.innerText = user.name || 'User';
     if (sideAvatar) {
         if (user.avatar) {
-            sideAvatar.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            sideAvatar.innerHTML = `<img src="${getFullImageUrl(user.avatar)}" style="width: 100%; height: 100%; object-fit: cover;">`;
         } else {
             sideAvatar.innerText = (user.name || 'U').charAt(0).toUpperCase();
         }
@@ -868,7 +875,7 @@ function showSection(id, event = null, updateHash = true) {
 
                 const initialsEl = document.getElementById('prof-initial-large');
                 if (user.avatar) {
-                    initialsEl.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    initialsEl.innerHTML = `<img src="${getFullImageUrl(user.avatar)}" style="width: 100%; height: 100%; object-fit: cover;">`;
                 } else {
                     initialsEl.innerText = (user.name || 'U').charAt(0).toUpperCase();
                 }

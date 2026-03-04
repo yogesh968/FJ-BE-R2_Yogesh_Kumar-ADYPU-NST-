@@ -32,15 +32,12 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", `http://localhost:${process.env.PORT || 3000}`],
+            imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", "*"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:52048", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
+            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:52048", "https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
         }
     }
 }));
-
-// Serve uploads
-app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -57,6 +54,13 @@ app.use(cors({
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploads
+const baseUploadDir = process.env.VERCEL || process.env.NODE_ENV === "production"
+    ? "/tmp/uploads"
+    : path.join(__dirname, "../../uploads");
+app.use("/uploads", express.static(baseUploadDir));
+
 app.use(passport.initialize());
 
 // Express JS replacer for BigInt support
