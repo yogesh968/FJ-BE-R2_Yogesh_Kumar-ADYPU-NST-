@@ -1,6 +1,6 @@
-const API_URL = window.location.hostname === 'localhost'
-    ? '/api/v1'
-    : 'https://fj-provider.onrender.com/api/v1';
+const API_URL = window.location.hostname === 'fjproject.vercel.app'
+    ? 'https://fj-provider.onrender.com/api/v1'
+    : '/api/v1';
 let token = localStorage.getItem('token');
 let charts = { trend: null, category: null, budget: null };
 
