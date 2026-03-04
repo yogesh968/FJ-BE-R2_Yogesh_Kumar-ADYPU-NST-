@@ -109,10 +109,7 @@ export class TransactionService {
     }
 
     async getDashboard(userId) {
-        const [summary, breakdown] = await Promise.all([
-            transactionRepository.getDashboardSummary(userId),
-            transactionRepository.getCategoryBreakdown(userId),
-        ]);
-        return { summary, breakdown };
+        const summary = await transactionRepository.getDashboardSummary(userId);
+        return { summary, breakdown: summary.breakdown };
     }
 }

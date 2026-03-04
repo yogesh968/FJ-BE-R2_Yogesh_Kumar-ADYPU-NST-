@@ -1,6 +1,6 @@
 const API_URL = 'http://localhost:3000/api/v1';
 let token = localStorage.getItem('token');
-let charts = { trend: null, category: null };
+let charts = { trend: null, category: null, budget: null };
 
 // --- Initialization & Auth Check ---
 function checkAuth() {
@@ -72,7 +72,7 @@ function openAuthModal(mode) {
     if (mode === 'login') {
         title.innerText = 'Welcome back';
         subtitle.innerText = 'Sync your finance workspace across all devices.';
-        switchText.innerText = 'New to Lumina?';
+        switchText.innerText = 'New to FINANCE FJ?';
         switchLink.innerText = 'Create an account';
     } else {
         title.innerText = 'Start for free';
@@ -111,6 +111,7 @@ async function login() {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
         showToast('Login successful');
+        window.location.hash = 'dashboard';
         checkAuth();
     } catch (err) {
         showToast(err.message || 'Authentication failed', 'error');
@@ -120,6 +121,7 @@ async function login() {
 function logout() {
     token = null;
     localStorage.removeItem('token');
+    window.location.hash = '';
     checkAuth();
 }
 
@@ -211,7 +213,7 @@ async function refreshData() {
         document.getElementById('month-income').innerText = formatCurrency(monthly.month_income);
         document.getElementById('month-expenses').innerText = formatCurrency(monthly.month_expenses);
 
-        renderCharts(transactions, summary.total_savings, dashRes.data.breakdown, history);
+        renderCharts(transactions, summary.total_savings, dashRes.data.breakdown, history, monthly.budgetComparison);
         renderRecentActivity(transactions);
 
         const currentHash = window.location.hash.replace('#', '') || 'dashboard';
@@ -256,8 +258,8 @@ function renderRecentActivity(transactions) {
     `}).join('');
 }
 
-function renderCharts(transactions, currentBalance, categoryBreakdown, history) {
-    // 1. Bar Chart (Income vs Expense)
+function renderCharts(transactions, currentBalance, categoryBreakdown, history, budgetComparison) {
+    // 1. Cash Flow Summary (Bar Chart: Income vs Expense)
     const trendCtx = document.getElementById('trendChart').getContext('2d');
     if (charts.trend) charts.trend.destroy();
 
@@ -294,6 +296,12 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history) 
                     display: true,
                     position: 'top',
                     labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Inter', size: 11 } }
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 10,
+                    titleFont: { size: 12, weight: 'bold' },
+                    bodyFont: { size: 12 }
                 }
             },
             scales: {
@@ -307,7 +315,7 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history) 
         }
     });
 
-    // 2. Category Chart (Doughnut) - now using full server-side breakdown
+    // 2. Expense Allocation (Doughnut Chart)
     const catCtx = document.getElementById('categoryChart').getContext('2d');
     if (charts.category) charts.category.destroy();
 
@@ -321,8 +329,10 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history) 
             labels: catLabels,
             datasets: [{
                 data: catData,
-                backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
-                borderWidth: 0,
+                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'],
+                borderWidth: 2,
+                borderColor: '#ffffff',
+                hoverOffset: 10,
                 cutout: '75%'
             }]
         },
@@ -330,10 +340,75 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history) 
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } }
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 8,
+                        font: { size: 11, family: 'Inter' },
+                        padding: 15
+                    }
+                }
             }
         }
     });
+
+    // 3. Budget vs Actual (Grouped Bar Chart)
+    const budgetCtx = document.getElementById('budgetChart')?.getContext('2d');
+    if (budgetCtx) {
+        if (charts.budget) charts.budget.destroy();
+
+        const bLabels = (budgetComparison || []).map(b => b.category);
+        const bBudgetData = (budgetComparison || []).map(b => b.budget);
+        const bActualData = (budgetComparison || []).map(b => b.actual);
+
+        charts.budget = new Chart(budgetCtx, {
+            type: 'bar',
+            data: {
+                labels: bLabels.length ? bLabels : ['No Budgets Set'],
+                datasets: [
+                    {
+                        label: 'Budget Limit',
+                        data: bBudgetData.length ? bBudgetData : [0],
+                        backgroundColor: '#e5e7eb',
+                        borderRadius: 4,
+                        barThickness: 30
+                    },
+                    {
+                        label: 'Actual Spend',
+                        data: bActualData.length ? bActualData : [0],
+                        backgroundColor: (context) => {
+                            const index = context.dataIndex;
+                            const budget = bBudgetData[index];
+                            const actual = bActualData[index];
+                            return actual > budget ? '#f87171' : '#6366f1';
+                        },
+                        borderRadius: 4,
+                        barThickness: 30
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal bars for easier reading of categories
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5], color: '#f3f4f6' },
+                        ticks: { callback: (v) => '$' + v }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
 }
 
 
@@ -536,7 +611,7 @@ async function fetchTransactions() {
 
 async function generateDemoData() {
     try {
-        showToast('Initializing wealth architecture...', 'info');
+        showToast('Initializing finance architecture...', 'info');
 
         // 1. Create a broad set of realistic categories
         const categories = [
@@ -601,7 +676,7 @@ async function generateDemoData() {
             }).catch(() => null);
         }
 
-        showToast('Wealth profile generated successfully');
+        showToast('Finance profile generated successfully');
         refreshData();
     } catch (err) {
         showToast('Calibration interrupted: ' + (err.message || 'System error'), 'error');

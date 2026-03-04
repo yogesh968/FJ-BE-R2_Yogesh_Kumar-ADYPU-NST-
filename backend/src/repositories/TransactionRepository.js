@@ -1,5 +1,22 @@
 import prisma from "../config/db.js";
 
+const EXCHANGE_RATES = {
+    USD: 1.0,
+    EUR: 1.08,
+    GBP: 1.26,
+    INR: 0.012,
+    JPY: 0.0067
+};
+
+function convertToUSD(amount, currency) {
+    const rate = EXCHANGE_RATES[currency] || 1.0;
+    return parseFloat(amount.toString()) * rate;
+}
+
+function isSameMonth(d1, d2) {
+    return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+}
+
 export class TransactionRepository {
     async createTransaction(data) {
         return prisma.transaction.create({ data });
@@ -48,57 +65,86 @@ export class TransactionRepository {
 
     async getDashboardSummary(userId) {
         const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        const [incomeTotal, expenseTotal, monthlyIncome, monthlyExpense] = await Promise.all([
-            prisma.transaction.aggregate({
-                where: { userId, category: { type: "INCOME" } },
-                _sum: { amount: true }
+        // Fetch everything once for absolute consistency
+        const [allTransactions, budgets, categories] = await Promise.all([
+            prisma.transaction.findMany({
+                where: { userId },
+                include: { category: true }
             }),
-            prisma.transaction.aggregate({
-                where: { userId, category: { type: "EXPENSE" } },
-                _sum: { amount: true }
+            prisma.budget.findMany({
+                where: { userId, month: now.getMonth() + 1, year: now.getFullYear() },
+                include: { category: true }
             }),
-            prisma.transaction.aggregate({
-                where: { userId, category: { type: "INCOME" }, date: { gte: startOfMonth } },
-                _sum: { amount: true }
-            }),
-            prisma.transaction.aggregate({
-                where: { userId, category: { type: "EXPENSE" }, date: { gte: startOfMonth } },
-                _sum: { amount: true }
-            })
+            prisma.category.findMany({ where: { userId } })
         ]);
 
-        // Last 6 months history
-        const historyStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-        const historyTransactions = await prisma.transaction.findMany({
-            where: {
-                userId,
-                date: { gte: historyStart }
-            },
-            include: { category: true }
+        // 1. All-time and Monthly Totals
+        let total_income = 0;
+        let total_expenses = 0;
+        let month_income = 0;
+        let month_expenses = 0;
+
+        // 2. Category Breakdown (Current Month)
+        const breakdownMap = new Map();
+        categories.forEach(c => {
+            breakdownMap.set(c.id, {
+                category_name: c.name,
+                category_type: c.type,
+                total_amount: 0
+            });
         });
 
-        const history = [];
+        // 3. History (Last 6 Months)
+        const historyMap = new Map();
         for (let i = 0; i < 6; i++) {
-            const date = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-            const m = date.getMonth() + 1;
-            const y = date.getFullYear();
-
-            const monthTx = historyTransactions.filter(t => {
-                const txDate = new Date(t.date);
-                return txDate.getMonth() + 1 === m && txDate.getFullYear() === y;
-            });
-
-            history.push({
-                month: date.toLocaleString('default', { month: 'short' }),
-                income: monthTx.filter(t => t.category.type === 'INCOME').reduce((s, t) => s + t.amount, 0),
-                expense: monthTx.filter(t => t.category.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0)
+            const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            historyMap.set(key, {
+                month: d.toLocaleString('default', { month: 'short' }),
+                income: 0,
+                expense: 0
             });
         }
 
-        const total_income = incomeTotal._sum.amount || 0;
-        const total_expenses = expenseTotal._sum.amount || 0;
+        // Single pass calculation
+        allTransactions.forEach(t => {
+            const txDate = new Date(t.date);
+            const amountUSD = convertToUSD(t.amount, t.currency);
+            const type = t.category.type;
+
+            // Global totals
+            if (type === 'INCOME') total_income += amountUSD;
+            else total_expenses += amountUSD;
+
+            // Monthly breakdown & totals
+            if (isSameMonth(txDate, now)) {
+                if (type === 'INCOME') month_income += amountUSD;
+                else {
+                    month_expenses += amountUSD;
+                    const catData = breakdownMap.get(t.categoryId);
+                    if (catData) catData.total_amount += amountUSD;
+                }
+            }
+
+            // History
+            const histKey = `${txDate.getFullYear()}-${txDate.getMonth()}`;
+            if (historyMap.has(histKey)) {
+                const h = historyMap.get(histKey);
+                if (type === 'INCOME') h.income += amountUSD;
+                else h.expense += amountUSD;
+            }
+        });
+
+        // Finalize budget comparison
+        const budgetComparison = budgets.map(b => {
+            const actual = breakdownMap.get(b.categoryId)?.total_amount || 0;
+            return {
+                category: b.category.name,
+                budget: parseFloat(b.amount.toString()),
+                actual: actual
+            };
+        });
 
         return {
             allTime: {
@@ -107,25 +153,19 @@ export class TransactionRepository {
                 total_savings: total_income - total_expenses
             },
             monthly: {
-                month_income: monthlyIncome._sum.amount || 0,
-                month_expenses: monthlyExpense._sum.amount || 0
+                month_income,
+                month_expenses,
+                budgetComparison
             },
-            history
+            history: Array.from(historyMap.values()),
+            breakdown: Array.from(breakdownMap.values()).filter(c => c.total_amount > 0)
         };
     }
 
-    async getCategoryBreakdown(userId) {
-        const categories = await prisma.category.findMany({
-            where: { userId },
-            include: {
-                transactions: true
-            }
-        });
-
-        return categories.map(c => ({
-            category_name: c.name,
-            category_type: c.type,
-            total_amount: c.transactions.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0)
-        }));
+    async getCategoryBreakdown(userId, month = null, year = null) {
+        // This is now redundant but kept for any specific API calls
+        const targetDate = (month && year) ? new Date(year, month - 1, 1) : new Date();
+        const summary = await this.getDashboardSummary(userId);
+        return summary.breakdown;
     }
 }

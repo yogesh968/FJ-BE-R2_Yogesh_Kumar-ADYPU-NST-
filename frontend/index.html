@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina | Smart Personal Finance</title>
+    <title>FINANCE FJ | Smart Personal Finance</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -54,7 +54,7 @@
     <div id="landing-page">
         <div class="landing-bg-glow"></div>
         <nav class="navbar">
-            <div class="nav-logo">Lumina</div>
+            <div class="nav-logo">FINANCE FJ</div>
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#security">Security</a>
@@ -102,7 +102,7 @@
                 onclick="login()">Continue</button>
 
             <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">
-                <span id="auth-switch-text">New to Lumina?</span>
+                <span id="auth-switch-text">New to FINANCE FJ?</span>
                 <a href="#" onclick="toggleAuth()" id="auth-switch-link"
                     style="color: var(--primary); font-weight: 600; text-decoration: none;">Create an account</a>
             </div>
@@ -124,7 +124,7 @@
     <!-- Application Dashboard Section -->
     <div id="app-page" class="app-wrapper hidden">
         <aside>
-            <div class="nav-logo">Lumina</div>
+            <div class="nav-logo">FINANCE FJ</div>
             <ul class="sidebar-nav">
                 <li id="nav-dashboard" class="active">
                     <a href="#dashboard">
@@ -182,7 +182,7 @@
                         User Name</p>
                     <p
                         style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em;">
-                        Lumina Founder</p>
+                        FINANCE FJ Founder</p>
                 </div>
                 <button onclick="logout()"
                     style="background: none; border: none; padding: 4px; cursor: pointer; color: #9ca3af; transition: color 0.2s;"
@@ -312,6 +312,14 @@
                     </div>
 
                     <div class="card col-span-12">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Budget vs Actual (This
+                            Month)</h3>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="budgetChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card col-span-12">
                         <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Recent Activity</h3>
                         <div id="dashboard-recent-list" class="recent-activity-container">
                             <!-- Populated by JS -->
@@ -434,7 +442,8 @@
                                     <p
                                         style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #1e40af; font-weight: 700;">
                                         Membership</p>
-                                    <p style="font-weight: 600; color: #1e40af; font-size: 0.9rem;">Lumina Pro Founder
+                                    <p style="font-weight: 600; color: #1e40af; font-size: 0.9rem;">FINANCE FJ Pro
+                                        Founder
                                     </p>
                                 </div>
                             </div>
