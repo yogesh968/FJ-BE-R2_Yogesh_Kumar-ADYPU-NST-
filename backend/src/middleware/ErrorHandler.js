@@ -33,11 +33,12 @@ export const errorHandler = (
         });
     }
 
-    console.error(err);
+    console.error("CRITICAL ERROR:", err);
 
     return res.status(500).json({
         success: false,
         message: "Internal Server Error",
-        stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+        error: err.message,
+        stack: err.stack, // Temporarily enabling stack trace to debug 500
     });
 };
