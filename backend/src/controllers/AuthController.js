@@ -14,6 +14,7 @@ export class AuthController {
     }
 
     async login(req, res, next) {
+        console.log(req.body);
         try {
             const result = await authService.login(req.body);
             res.status(200).json(new ApiResponse(200, result, "User logged in successfully"));
