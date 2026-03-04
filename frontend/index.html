@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | Smart Personal Finance</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        .action-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .action-card:hover {
+            border-color: #111827;
+            background: #fdfdfd;
+        }
+
+        .action-card:hover .action-icon {
+            background: #111827 !important;
+            color: white !important;
+        }
+
+        .action-icon {
+            transition: all 0.3s ease;
+            background: #f3f4f6;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-arrow {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .action-card:hover .action-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Landing Page Section -->
+    <div id="landing-page">
+        <div class="landing-bg-glow"></div>
+        <nav class="navbar">
+            <div class="nav-logo">Lumina</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#security">Security</a>
+                <a href="#pricing">Pricing</a>
+                <button class="btn btn-outline" onclick="openAuthModal('login')">Sign In</button>
+                <button class="btn btn-primary" onclick="openAuthModal('register')">Get Started</button>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <div class="hero-content">
+                <h1>Intelligence for your net worth.</h1>
+                <p>The modern data platform for personal wealth tracking, automated budgeting, and financial clarity.
+                </p>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-primary" onclick="openAuthModal('register')">Start for free</button>
+                    <button class="btn btn-outline">Watch demo</button>
+                </div>
+                <div style="margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem;">
+                    TRUSTED BY 50,000+ INDIVIDUALS WORLDWIDE
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="professional_fintech_hero_1772392521671.png" alt="Fintech Growth Illustration">
+            </div>
+        </header>
+    </div>
+
+    <!-- Auth Modal Overlay -->
+    <div id="auth-modal" class="auth-overlay hidden" onclick="if(event.target === this) closeAuthModal()">
+        <div class="auth-card">
+            <h2 id="auth-title">Welcome back</h2>
+            <p id="auth-subtitle">Sync your finance workspace across all devices.</p>
+
+            <div class="form-group">
+                <label>Email address</label>
+                <input type="email" id="email" placeholder="name@company.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" value="password123">
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 1.5rem;"
+                onclick="login()">Continue</button>
+
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                <span id="auth-switch-text">New to Lumina?</span>
+                <a href="#" onclick="toggleAuth()" id="auth-switch-link"
+                    style="color: var(--primary); font-weight: 600; text-decoration: none;">Create an account</a>
+            </div>
+
+            <div style="margin: 2rem 0; display: flex; align-items: center; gap: 1rem;">
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">OR</span>
+                <div style="flex: 1; height: 1px; background: var(--border);"></div>
+            </div>
+
+            <button class="btn btn-outline" style="width: 100%; justify-content: center;"
+                onclick="location.href='http://localhost:3000/api/v1/auth/google'">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" style="width: 18px;">
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Dashboard Section -->
+    <div id="app-page" class="app-wrapper hidden">
+        <aside>
+            <div class="nav-logo">Lumina</div>
+            <ul class="sidebar-nav">
+                <li id="nav-dashboard" class="active">
+                    <a href="#dashboard">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                            </path>
+                        </svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li id="nav-transactions">
+                    <a href="#transactions">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                            </path>
+                        </svg>
+                        Transactions
+                    </a>
+                </li>
+                <li id="nav-budgets">
+                    <a href="#budgets">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        Budgets
+                    </a>
+                </li>
+                <li id="nav-profile">
+                    <a href="#profile">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        Profile
+                    </a>
+                </li>
+            </ul>
+
+            <div
+                style="position: absolute; bottom: 1.5rem; left: 1rem; right: 1rem; padding: 1rem; background: #f9fafb; border-radius: 12px; border: 1px solid #f3f4f6; display: flex; align-items: center; gap: 0.75rem;">
+                <div id="side-user-avatar"
+                    style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; overflow: hidden;">
+                    ?
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <p id="side-user-name"
+                        style="font-weight: 600; font-size: 0.85rem; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        User Name</p>
+                    <p
+                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em;">
+                        Lumina Founder</p>
+                </div>
+                <button onclick="logout()"
+                    style="background: none; border: none; padding: 4px; cursor: pointer; color: #9ca3af; transition: color 0.2s;"
+                    onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#9ca3af'">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <main>
+            <!-- Dashboard Section -->
+            <section id="dashboard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700;">Good morning,
+                            there.</h2>
+                        <p style="color: var(--text-muted);">Take control of your wealth today.</p>
+                    </div>
+                </div>
+
+                <!-- Minimalist Quick Actions -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 3.5rem;">
+                    <div class="card action-card"
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-radius: 12px;"
+                        onclick="openTransactionModal('INCOME')">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="action-icon" style="width: 44px; height: 44px; border-radius: 10px;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: #111827; font-size: 1rem; font-weight: 600;">Add Income
+                                </h4>
+                                <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Record new earnings</p>
+                            </div>
+                        </div>
+                        <div class="action-arrow">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path d="M13 7l5 5-5 5M6 12h12"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="card action-card"
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-radius: 12px;"
+                        onclick="openTransactionModal('EXPENSE')">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="action-icon" style="width: 44px; height: 44px; border-radius: 10px;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path d="M20 12H4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: #111827; font-size: 1rem; font-weight: 600;">Record Expense
+                                </h4>
+                                <p style="margin: 0; font-size: 0.75rem; color: #6b7280;">Log a spending</p>
+                            </div>
+                        </div>
+                        <div class="action-arrow">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path d="M13 7l5 5-5 5M6 12h12"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State Guidance (Hidden by default, shown by app.js if income is 0) -->
+                <div id="dashboard-welcome" class="card hidden"
+                    style="text-align: center; padding: 4rem 2rem; margin-bottom: 3rem; border: 2px dashed var(--border);">
+                    <div
+                        style="background: var(--accent); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: var(--primary);">
+                        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Ready to build wealth?</h3>
+                    <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 2rem;">Your account is empty.
+                        Start by adding your current income or initial savings balance to see your wealth trend.</p>
+                    <button class="btn btn-primary" onclick="openTransactionModal('INCOME')">Set up your
+                        balance</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <h4>Total Savings</h4>
+                        <div class="stat-value" id="total-balance">$0.00</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h4>Total Income</h4>
+                        <div class="stat-value" id="total-income" style="color: var(--success);">$0.00</div>
+                        <p class="month-indicator">This month: <span id="month-income"
+                                style="font-weight: 700; color: var(--success);">$0</span></p>
+                    </div>
+                    <div class="card stat-card">
+                        <h4>Total Spent</h4>
+                        <div class="stat-value" id="total-expenses" style="color: var(--danger);">$0.00</div>
+                        <p class="month-indicator">This month: <span id="month-expenses"
+                                style="font-weight: 700; color: var(--danger);">$0</span></p>
+                    </div>
+                </div>
+
+                <div class="dashboard-main">
+                    <div class="card col-span-8">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">Cash Flow Summary</h3>
+                        </div>
+                        <div class="chart-wrapper" style="height: 350px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card col-span-4">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Expense Allocation</h3>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card col-span-12">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">Recent Activity</h3>
+                        <div id="dashboard-recent-list" class="recent-activity-container">
+                            <!-- Populated by JS -->
+                        </div>
+                        <a href="#transactions"
+                            style="display: block; text-align: center; margin-top: 1.5rem; color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600;">View
+                            Full Transaction Ledger</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section id="transactions" class="hidden">
+                <h2 style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">
+                    Transaction History</h2>
+                <div class="card" id="transaction-list">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Budgets Section -->
+            <section id="budgets" class="hidden">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem;">
+                    <div>
+                        <h2
+                            style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+                            Budgets</h2>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select id="bg-view-month" onchange="fetchBudgets()" class="form-control-sm"
+                                style="width: 140px; padding: 4px 8px; border-radius: 6px;"></select>
+                            <select id="bg-view-year" onchange="fetchBudgets()" class="form-control-sm"
+                                style="width: 100px; padding: 4px 8px; border-radius: 6px;"></select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openBudgetModal()">+ Set Limit</button>
+                </div>
+
+                <div class="budget-stats-bar card" id="budget-summary-bar">
+                    <div class="stat-item">
+                        <span class="label">Total Budgeted</span>
+                        <span class="value" id="total-budgeted">$0.00</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="label">Total Spent</span>
+                        <span class="value" id="total-budget-spent">$0.00</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="label">Remaining</span>
+                        <span class="value" id="total-budget-remaining">$0.00</span>
+                    </div>
+                </div>
+
+                <div id="budget-list" class="budget-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="hidden">
+                <div style="margin-bottom: 3rem;">
+                    <h2
+                        style="font-family: 'Outfit', sans-serif; font-size: 2.25rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">
+                        Account Settings</h2>
+                    <p style="color: var(--text-muted); font-size: 1rem;">Manage your identity, security, and
+                        preferences.</p>
+                </div>
+
+                <div class="profile-grid">
+                    <!-- Identity Sidebar -->
+                    <div class="card" style="text-align: center; padding: 3rem 2rem;">
+                        <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 1.5rem; cursor: pointer;"
+                            onclick="document.getElementById('avatar-input').click()">
+                            <div id="prof-initial-large"
+                                style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #4f46e5); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: white; border: 4px solid white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+                                ?
+                            </div>
+                            <!-- Hidden File Input -->
+                            <input type="file" id="avatar-input" style="display: none;" accept="image/*"
+                                onchange="uploadAvatar(this)">
+
+                            <div
+                                style="position: absolute; bottom: 0; right: 0; background: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; pointer-events: none;">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                                    </path>
+                                    <path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 id="prof-name-display" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">
+                            User Name</h3>
+                        <p id="prof-email-display"
+                            style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">email@example.com
+                        </p>
+
+                        <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                            <div
+                                style="padding: 1rem; background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0; display: flex; align-items: center; gap: 0.75rem;">
+                                <div
+                                    style="background: var(--success); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
+                                    ✓</div>
+                                <div>
+                                    <p
+                                        style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #166534; font-weight: 700;">
+                                        Account Status</p>
+                                    <p style="font-weight: 600; color: #166534; font-size: 0.9rem;">Verified Active</p>
+                                </div>
+                            </div>
+                            <div
+                                style="padding: 1rem; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; display: flex; align-items: center; gap: 0.75rem;">
+                                <div
+                                    style="background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
+                                    ★</div>
+                                <div>
+                                    <p
+                                        style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #1e40af; font-weight: 700;">
+                                        Membership</p>
+                                    <p style="font-weight: 600; color: #1e40af; font-size: 0.9rem;">Lumina Pro Founder
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Settings -->
+                    <div style="display: flex; flex-direction: column; gap: 2rem;">
+                        <div class="card">
+                            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Account
+                                Intelligence</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div
+                                    style="background: #f9fafb; padding: 1.25rem; border-radius: 12px; text-align: center; border: 1px solid #f3f4f6;">
+                                    <p
+                                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700;">
+                                        Ledger Entries</p>
+                                    <p id="prof-tx-count"
+                                        style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">
+                                        Syncing...</p>
+                                </div>
+                                <div
+                                    style="background: #f9fafb; padding: 1.25rem; border-radius: 12px; text-align: center; border: 1px solid #f3f4f6;">
+                                    <p
+                                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700;">
+                                        Trust Score</p>
+                                    <p style="font-size: 1.25rem; font-weight: 800; color: var(--success);">98.4%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Personal
+                                Information</h4>
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: #374151;">Display Name</label>
+                                <input type="text" id="update-name" placeholder="How should we call you?"
+                                    style="background: #fdfdfd; border: 1px solid #e5e7eb;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: #374151;">Email Address</label>
+                                <input type="email" id="prof-email-readonly" readonly
+                                    style="background: #f3f4f6; cursor: not-allowed; color: #6b7280; border: 1px solid #e5e7eb;">
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Security
+                                    Restricted: Email changes are disabled for Founders.</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Security Protocol
+                            </h4>
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: #374151;">Update Password</label>
+                                <input type="password" id="update-password" placeholder="Leave blank to keep current">
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                                <button class="btn btn-primary" onclick="updateProfile()"
+                                    style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">Save New
+                                    Protocol</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="transaction-modal" class="auth-overlay hidden"
+        onclick="if(event.target === this) closeModal('transaction-modal')">
+        <div class="auth-card">
+            <h2>New Transaction</h2>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="tr-amount" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="tr-currency">
+                        <option value="USD" selected>USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="INR">INR</option>
+                        <option value="JPY">JPY</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="tr-date">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="tr-desc" placeholder="e.g. Grocery">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="tr-category">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Receipt Upload</label>
+                <div
+                    style="border: 2px dashed var(--border); border-radius: 8px; padding: 1rem; text-align: center; background: #fafafa; position: relative; cursor: pointer;">
+                    <input type="file" id="tr-receipt"
+                        style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                    <div id="receipt-label">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24" style="margin-bottom: 8px; color: var(--text-muted);">
+                            <path
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
+                        </svg>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Click or drag receipt photo</p>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="addTransaction()">Save transaction</button>
+                <button class="btn btn-outline" onclick="closeModal('transaction-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div id="budget-modal" class="auth-overlay hidden" onclick="if(event.target === this) closeModal('budget-modal')">
+        <div class="auth-card">
+            <h2>Set Budget</h2>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="bg-category"></select>
+            </div>
+            <div class="form-group">
+                <label>Limit amount</label>
+                <input type="number" id="bg-amount" placeholder="0.00">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Month</label>
+                    <select id="bg-month"></select>
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <select id="bg-year"></select>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addBudget()">Save budget</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="app.js"></script>
+</body>
+
+</html>
