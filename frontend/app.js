@@ -216,7 +216,6 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 
 // --- Dashboard & Data ---
 async function refreshData() {
-    const loader = document.getElementById('global-loader');
     console.log('Starting data refresh...');
     try {
         await fetchCategories();
@@ -228,7 +227,6 @@ async function refreshData() {
 
         if (!dashRes || !dashRes.data) {
             console.warn('Dashboard data missing');
-            if (loader) loader.classList.add('fade-out');
             return;
         }
 
@@ -255,8 +253,6 @@ async function refreshData() {
     } catch (err) {
         console.error('Data refresh fatal error', err);
         showToast('Connection error. Please refresh.', 'error');
-    } finally {
-        if (loader) loader.classList.add('fade-out');
     }
 }
 
