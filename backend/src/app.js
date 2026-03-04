@@ -17,8 +17,10 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
+    'http://127.0.0.1:5500',
     'http://localhost:3000',
     'http://localhost:5000',
+    'http://localhost:52048',
     process.env.FRONTEND_URL || 'https://fjproject.vercel.app'
 ];
 
@@ -32,7 +34,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", `http://localhost:${process.env.PORT || 3000}`],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            connectSrc: ["'self'", "http://localhost:3000", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
+            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:52048", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
         }
     }
 }));
@@ -42,7 +44,6 @@ app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, Postman) or from allowed list
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
