@@ -1,4 +1,4 @@
-const API_URL = 'https://fj-be-r2-yogesh-kumar-adypu-m32bakqjp.vercel.app/api/v1';
+const API_URL = '/api/v1';
 let token = localStorage.getItem('token');
 let charts = { trend: null, category: null, budget: null };
 
