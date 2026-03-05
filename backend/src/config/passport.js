@@ -35,7 +35,22 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                                     email: email,
                                     name: profile.displayName,
                                 });
+
+                                // Seed default categories for new Google user
+                                const { AuthService } = await import("../services/AuthService.js");
+                                const authService = new AuthService();
+                                await authService.seedDefaultCategories(user.id);
                             }
+                        }
+                    } else {
+                        // Existing Google user - double check if they have categories (migration safeguard)
+                        const { CategoryRepository } = await import("../repositories/CategoryRepository.js");
+                        const categoryRepository = new CategoryRepository();
+                        const cats = await categoryRepository.findByUserId(user.id);
+                        if (cats.length === 0) {
+                            const { AuthService } = await import("../services/AuthService.js");
+                            const authService = new AuthService();
+                            await authService.seedDefaultCategories(user.id);
                         }
                     }
 

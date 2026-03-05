@@ -30,11 +30,19 @@ function checkAuth() {
         appPage.classList.remove('hidden');
         authModal.classList.add('hidden');
 
-        updateTopLevelUserUI();
-        populateTimeDropdowns(); // Ensure dropdowns are ready
+        // Fetch profile if not in localStorage (common after Google redirect)
+        if (!localStorage.getItem('user')) {
+            apiRequest('/auth/profile').then(res => {
+                localStorage.setItem('user', JSON.stringify(res.data));
+                updateTopLevelUserUI();
+            });
+        } else {
+            updateTopLevelUserUI();
+        }
 
+        populateTimeDropdowns();
         const initialRoute = window.location.hash.replace('#', '') || 'dashboard';
-        showSection(initialRoute, null, false); // null for event, false for updateHash
+        showSection(initialRoute, null, false);
         refreshData();
         gsap.from('main', { opacity: 0, y: 10, duration: 0.5 });
     } else {
@@ -903,10 +911,10 @@ function showSection(id, event = null, updateHash = true) {
 
                 // Fetch dynamic stats for profile
                 apiRequest('/transactions?limit=1').then(res => {
-                    const count = res.data?.total || 0;
+                    const count = res.data?.totalTransactions || 0;
                     document.getElementById('prof-tx-count').innerText = `${count} Ledger Entries`;
                 }).catch(() => {
-                    document.getElementById('prof-tx-count').innerText = 'Data Sync Error';
+                    document.getElementById('prof-tx-count').innerText = '0 Ledger Entries';
                 });
             }
         }
