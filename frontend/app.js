@@ -227,12 +227,8 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 async function refreshData() {
     console.log('Starting data refresh...');
     try {
-        await fetchCategories();
-
-        // Safeguard: if token was cleared by fetchCategories' apiRequest, stop here
-        if (!token) return;
-
-        const [dashRes, txRes] = await Promise.all([
+        const [catsRes, dashRes, txRes] = await Promise.all([
+            fetchCategories(),
             apiRequest('/dashboard').catch(e => {
                 if (e.message !== 'Please sign in again') console.error('Dash error', e);
                 return { data: null };
@@ -242,6 +238,9 @@ async function refreshData() {
                 return { data: { transactions: [] } };
             })
         ]);
+
+        // Safeguard: if token was cleared by any request (caught in apiRequest), stop here
+        if (!token) return;
 
         if (!dashRes || !dashRes.data) {
             if (token) console.warn('Dashboard data missing');

@@ -73,32 +73,44 @@ export class TransactionRepository {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
 
-        // 1. Fetch Totals and Budgets in parallel
-        const [stats, historyStats, monthlyTransactions, budgets, categories] = await Promise.all([
-            // All-time totals (approximated as SUM in DB is faster than manual loops)
+        // 1. Fetch Aggregated Data in parallel
+        const [
+            incomeTotals,
+            expenseTotals,
+            historyStats,
+            monthlyBreakdown,
+            budgets,
+            categories
+        ] = await Promise.all([
+            // Income aggregates by currency
             prisma.transaction.groupBy({
-                by: ['userId'],
-                where: { userId },
-                _sum: { amount: true },
+                by: ['currency'],
+                where: { userId, category: { type: 'INCOME' } },
+                _sum: { amount: true }
             }),
-            // Last 6 months history
+            // Expense aggregates by currency
+            prisma.transaction.groupBy({
+                by: ['currency'],
+                where: { userId, category: { type: 'EXPENSE' } },
+                _sum: { amount: true }
+            }),
+            // Last 6 months history - grouped by month and type
+            // Note: Grouping by month in Prisma is tricky, so we'll fetch only 
+            // necessary fields and group in JS (much smaller data than all transactions)
             prisma.transaction.findMany({
                 where: {
                     userId,
-                    date: {
-                        gte: new Date(now.getFullYear(), now.getMonth() - 5, 1)
-                    }
+                    date: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) }
                 },
-                include: { category: true }
+                select: { amount: true, currency: true, date: true, category: { select: { type: true } } }
             }),
-            // Current month transactions for breakdown
-            prisma.transaction.findMany({
-                where: {
-                    userId,
-                    date: { gte: startOfMonth, lte: endOfMonth }
-                },
-                include: { category: true }
+            // Current month breakdown by category and currency
+            prisma.transaction.groupBy({
+                by: ['categoryId', 'currency'],
+                where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
+                _sum: { amount: true }
             }),
             prisma.budget.findMany({
                 where: { userId, month: now.getMonth() + 1, year: now.getFullYear() },
@@ -107,27 +119,33 @@ export class TransactionRepository {
             prisma.category.findMany({ where: { userId } })
         ]);
 
-        // 2. Process Monthly Data
+        // 2. Process Global Totals
+        let total_income = 0;
+        let total_expenses = 0;
+        incomeTotals.forEach(item => total_income += convertToUSD(item._sum.amount, item.currency));
+        expenseTotals.forEach(item => total_expenses += convertToUSD(item._sum.amount, item.currency));
+
+        // 3. Process Monthly Totals and Breakdown
         let month_income = 0;
         let month_expenses = 0;
         const breakdownMap = new Map();
 
+        // Initialize breakdown map with all categories
         categories.forEach(c => {
             breakdownMap.set(c.id, { category_name: c.name, category_type: c.type, total_amount: 0 });
         });
 
-        monthlyTransactions.forEach(t => {
-            const amountUSD = convertToUSD(t.amount, t.currency);
-            if (t.category.type === 'INCOME') {
-                month_income += amountUSD;
-            } else {
-                month_expenses += amountUSD;
-                const catData = breakdownMap.get(t.categoryId);
-                if (catData) catData.total_amount += amountUSD;
+        monthlyBreakdown.forEach(item => {
+            const amountUSD = convertToUSD(item._sum.amount, item.currency);
+            const catData = breakdownMap.get(item.categoryId);
+            if (catData) {
+                catData.total_amount += amountUSD;
+                if (catData.category_type === 'INCOME') month_income += amountUSD;
+                else month_expenses += amountUSD;
             }
         });
 
-        // 3. Process History (Last 6 Months)
+        // 4. Process History (Last 6 Months)
         const historyMap = new Map();
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
@@ -146,30 +164,7 @@ export class TransactionRepository {
             }
         });
 
-        // 4. Calculate Global Totals (We'll use a single query for this now)
-        const totals = await prisma.transaction.groupBy({
-            by: ['userId'],
-            where: { userId },
-            _sum: { amount: true }
-        });
-        // Note: For multi-currency, a single group-by sum isn't 100% accurate if currencies differ.
-        // But for dashboard speed, we retrieve only what we need.
-        // Let's refine global totals to be more accurate but still fast.
-        let total_income = 0;
-        let total_expenses = 0;
-
-        // Fetching aggregate by category type is better
-        const typeTotals = await prisma.transaction.findMany({
-            where: { userId },
-            select: { amount: true, currency: true, category: { select: { type: true } } }
-        });
-
-        typeTotals.forEach(t => {
-            const amountUSD = convertToUSD(t.amount, t.currency);
-            if (t.category.type === 'INCOME') total_income += amountUSD;
-            else total_expenses += amountUSD;
-        });
-
+        // 5. Budget Comparison
         const budgetComparison = budgets.map(b => {
             const actual = breakdownMap.get(b.categoryId)?.total_amount || 0;
             return {
