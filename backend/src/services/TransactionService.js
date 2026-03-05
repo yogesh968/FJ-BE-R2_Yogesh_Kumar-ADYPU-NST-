@@ -28,15 +28,22 @@ export class TransactionService {
                 const receipt = await tx.receipt.create({
                     data: {
                         filePath: file.path,
-                        fileType: file.mimetype
+                        fileType: file.mimetype,
+                        userId: userId // Fixed: missing userId
                     }
                 });
                 receiptId = receipt.id;
             }
 
+            // Cleanup data to avoid passing extra fields or duplicate userId/receiptId
+            const { categoryId, description, amount, currency } = data;
+
             const transaction = await tx.transaction.create({
                 data: {
-                    ...data,
+                    amount,
+                    currency,
+                    description,
+                    categoryId,
                     date: new Date(data.date),
                     userId,
                     receiptId
