@@ -12,6 +12,15 @@ const getFullImageUrl = (path) => {
 
 // --- Initialization & Auth Check ---
 function checkAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+        token = urlToken;
+        localStorage.setItem('token', token);
+        // Clear query params to clean the URL
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    }
+
     const landingPage = document.getElementById('landing-page');
     const appPage = document.getElementById('app-page');
     const authModal = document.getElementById('auth-modal');
