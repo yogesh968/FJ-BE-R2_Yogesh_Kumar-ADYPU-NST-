@@ -260,9 +260,12 @@ async function refreshData() {
         if (!token) return;
 
         if (!dashRes || !dashRes.data) {
-            if (token) console.warn('Dashboard data missing');
+            console.error('Dashboard data fetch failed or empty', dashRes);
+            if (token) showToast('Could not load dashboard data', 'error');
             return;
         }
+
+        console.log('Dash Data Received:', dashRes.data);
 
         const transactions = txRes.data?.transactions || [];
         const summary = dashRes.data.summary?.allTime || { total_income: 0, total_expenses: 0, total_savings: 0 };
@@ -322,204 +325,223 @@ function renderRecentActivity(transactions) {
 }
 
 function renderCharts(transactions, currentBalance, categoryBreakdown, history, budgetComparison) {
+    console.log('Rendering Charts with:', { txCount: transactions.length, breakdownCount: categoryBreakdown?.length, historyCount: history?.length });
+
     // 1. Cash Flow Summary (Bar Chart: Income vs Expense)
-    const trendCtx = document.getElementById('trendChart').getContext('2d');
-    if (charts.trend) charts.trend.destroy();
+    const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+    if (trendCtx) {
+        if (charts.trend) charts.trend.destroy();
 
-    const labels = (history || []).map(h => h.month);
-    const incomeData = (history || []).map(h => h.income);
-    const expenseData = (history || []).map(h => h.expense);
+        const labels = (history || []).map(h => h.month);
+        const incomeData = (history || []).map(h => h.income);
+        const expenseData = (history || []).map(h => h.expense);
 
-    charts.trend = new Chart(trendCtx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: 'Income',
-                    data: incomeData,
-                    backgroundColor: '#10b981',
-                    borderRadius: 6,
-                    barThickness: 20
-                },
-                {
-                    label: 'Expenses',
-                    data: expenseData,
-                    backgroundColor: '#ef4444',
-                    borderRadius: 6,
-                    barThickness: 20
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Inter', size: 11 } }
-                },
-                tooltip: {
-                    backgroundColor: '#1f2937',
-                    padding: 10,
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 12 }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { borderDash: [5, 5], color: '#f3f4f6' },
-                    ticks: { color: '#9ca3af', font: { size: 10 }, callback: (v) => '$' + v }
-                },
-                x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
-            }
-        }
-    });
-
-    // 2. Expense Allocation (Doughnut Chart)
-    const catCtx = document.getElementById('categoryChart').getContext('2d');
-    if (charts.category) charts.category.destroy();
-
-    const expenses = (categoryBreakdown || []).filter(c => c.category_type === 'EXPENSE');
-    const catLabels = expenses.map(c => c.category_name);
-    const catData = expenses.map(c => parseFloat(c.total_amount));
-
-    charts.category = new Chart(catCtx, {
-        type: 'doughnut',
-        data: {
-            labels: catLabels,
-            datasets: [{
-                data: catData,
-                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'],
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverOffset: 10,
-                cutout: '75%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        boxWidth: 8,
-                        font: { size: 11, family: 'Inter' },
-                        padding: 15
-                    }
-                }
-            }
-        }
-    });
-
-    // 3. Budget vs Actual (Grouped Bar Chart)
-    const budgetCtx = document.getElementById('budgetChart')?.getContext('2d');
-    if (budgetCtx) {
-        if (charts.budget) charts.budget.destroy();
-
-        const bLabels = (budgetComparison || []).map(b => b.category);
-        const bBudgetData = (budgetComparison || []).map(b => b.budget);
-        const bActualData = (budgetComparison || []).map(b => b.actual);
-
-        charts.budget = new Chart(budgetCtx, {
+        charts.trend = new Chart(trendCtx, {
             type: 'bar',
             data: {
-                labels: bLabels.length ? bLabels : ['No Budgets Set'],
+                labels,
                 datasets: [
                     {
-                        label: 'Budget Limit',
-                        data: bBudgetData.length ? bBudgetData : [0],
-                        backgroundColor: '#e5e7eb',
-                        borderRadius: 4,
-                        barThickness: 25
+                        label: 'Income',
+                        data: incomeData,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6,
+                        barThickness: 20
                     },
                     {
-                        label: 'Actual Spend',
-                        data: bActualData.length ? bActualData : [0],
-                        backgroundColor: (context) => {
-                            const index = context.dataIndex;
-                            const budget = bBudgetData[index];
-                            const actual = bActualData[index];
-                            return actual > budget ? '#f87171' : '#6366f1';
-                        },
-                        borderRadius: 4,
-                        barThickness: 25
+                        label: 'Expenses',
+                        data: expenseData,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6,
+                        barThickness: 20
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
                 plugins: {
                     legend: {
+                        display: true,
                         position: 'top',
-                        labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } }
+                        labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Inter', size: 11 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1f2937',
+                        padding: 10,
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 }
                     }
                 },
                 scales: {
-                    x: {
+                    y: {
                         beginAtZero: true,
                         grid: { borderDash: [5, 5], color: '#f3f4f6' },
-                        ticks: { callback: (v) => '$' + v }
+                        ticks: { color: '#9ca3af', font: { size: 10 }, callback: (v) => '$' + v }
                     },
-                    y: { grid: { display: false } }
+                    x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
                 }
             }
         });
-    }
 
-    // 4. Daily Spending Intensity (Line Chart)
-    const dailyCtx = document.getElementById('dailyChart')?.getContext('2d');
-    if (dailyCtx) {
-        if (charts.daily) charts.daily.destroy();
+        // 2. Expense Allocation (Doughnut Chart)
+        const catCtx = document.getElementById('categoryChart')?.getContext('2d');
+        if (catCtx) {
+            if (charts.category) charts.category.destroy();
 
-        // Group last 30 days transactions by day
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        const dailyGroups = {};
+            const expenses = (categoryBreakdown || []).filter(c => c.category_type === 'EXPENSE' && c.total_amount > 0);
 
-        for (let i = 0; i < 30; i++) {
-            const d = new Date(thirtyDaysAgo.getTime() + (i * 24 * 60 * 60 * 1000));
-            dailyGroups[d.toISOString().split('T')[0]] = 0;
+            if (expenses.length === 0) {
+                // Draw a placeholder or clear
+                if (catCtx.canvas) {
+                    const ctx = catCtx;
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.font = '14px Inter';
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No expenses this month', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                }
+            } else {
+                const catLabels = expenses.map(c => c.category_name);
+                const catData = expenses.map(c => parseFloat(c.total_amount));
+
+                charts.category = new Chart(catCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catData,
+                            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 10,
+                            cutout: '75%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    font: { size: 11, family: 'Inter' },
+                                    padding: 15
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
-        transactions.forEach(t => {
-            const dStr = t.date.split('T')[0];
-            if (dailyGroups[dStr] !== undefined && t.category.type === 'EXPENSE') {
-                dailyGroups[dStr] += t.amount;
-            }
-        });
+        // 3. Budget vs Actual (Grouped Bar Chart)
+        const budgetCtx = document.getElementById('budgetChart')?.getContext('2d');
+        if (budgetCtx) {
+            if (charts.budget) charts.budget.destroy();
 
-        charts.daily = new Chart(dailyCtx, {
-            type: 'line',
-            data: {
-                labels: Object.keys(dailyGroups).map(k => k.split('-')[2]), // only days
-                datasets: [{
-                    label: 'Daily Spend',
-                    data: Object.values(dailyGroups),
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                    y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f3f4f6' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+            const bLabels = (budgetComparison || []).map(b => b.category);
+            const bBudgetData = (budgetComparison || []).map(b => b.budget);
+            const bActualData = (budgetComparison || []).map(b => b.actual);
+
+            charts.budget = new Chart(budgetCtx, {
+                type: 'bar',
+                data: {
+                    labels: bLabels.length ? bLabels : ['No Budgets Set'],
+                    datasets: [
+                        {
+                            label: 'Budget Limit',
+                            data: bBudgetData.length ? bBudgetData : [0],
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: 4,
+                            barThickness: 25
+                        },
+                        {
+                            label: 'Actual Spend',
+                            data: bActualData.length ? bActualData : [0],
+                            backgroundColor: (context) => {
+                                const index = context.dataIndex;
+                                const budget = bBudgetData[index];
+                                const actual = bActualData[index];
+                                return actual > budget ? '#f87171' : '#6366f1';
+                            },
+                            borderRadius: 4,
+                            barThickness: 25
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#f3f4f6' },
+                            ticks: { callback: (v) => '$' + v }
+                        },
+                        y: { grid: { display: false } }
+                    }
                 }
+            });
+        }
+
+        // 4. Daily Spending Intensity (Line Chart)
+        const dailyCtx = document.getElementById('dailyChart')?.getContext('2d');
+        if (dailyCtx) {
+            if (charts.daily) charts.daily.destroy();
+
+            // Group last 30 days transactions by day
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            const dailyGroups = {};
+
+            for (let i = 0; i < 30; i++) {
+                const d = new Date(thirtyDaysAgo.getTime() + (i * 24 * 60 * 60 * 1000));
+                dailyGroups[d.toISOString().split('T')[0]] = 0;
             }
-        });
+
+            transactions.forEach(t => {
+                const dStr = t.date.split('T')[0];
+                if (dailyGroups[dStr] !== undefined && t.category.type === 'EXPENSE') {
+                    dailyGroups[dStr] += t.amount;
+                }
+            });
+
+            charts.daily = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(dailyGroups).map(k => k.split('-')[2]), // only days
+                    datasets: [{
+                        label: 'Daily Spend',
+                        data: Object.values(dailyGroups),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f3f4f6' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+                    }
+                }
+            });
+        }
     }
 }
 

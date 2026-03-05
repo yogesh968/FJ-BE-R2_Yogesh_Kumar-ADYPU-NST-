@@ -75,32 +75,25 @@ export class TransactionRepository {
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endOfMonth.setHours(23, 59, 59, 999);
 
-        // 1. Fetch Categories first to filter by type in groupBy
-        const categories = await prisma.category.findMany({ where: { userId } });
-        const incomeCategoryIds = categories.filter(c => c.type === 'INCOME').map(c => c.id);
-        const expenseCategoryIds = categories.filter(c => c.type === 'EXPENSE').map(c => c.id);
+        // 1. Fetch Categories and all historic transactions grouped by category/currency
+        let categories = await prisma.category.findMany({ where: { userId } });
 
-        // 2. Fetch Aggregated Data in parallel
-        const [
-            incomeTotals,
-            expenseTotals,
-            historyStats,
-            monthlyBreakdown,
-            budgets
-        ] = await Promise.all([
-            // Income aggregates by currency
+        // AUTO-SEED: If no categories exist, seed them now before proceeding
+        if (categories.length === 0) {
+            console.log(`Auto-seeding categories for user ${userId}`);
+            const { AuthService } = await import("../services/AuthService.js");
+            const authService = new AuthService();
+            await authService.seedDefaultCategories(userId);
+            categories = await prisma.category.findMany({ where: { userId } });
+        }
+
+        const [transactionAggregates, historyStats, budgets] = await Promise.all([
             prisma.transaction.groupBy({
-                by: ['currency'],
-                where: { userId, categoryId: { in: incomeCategoryIds } },
+                by: ['categoryId', 'currency'],
+                where: { userId },
                 _sum: { amount: true }
             }),
-            // Expense aggregates by currency
-            prisma.transaction.groupBy({
-                by: ['currency'],
-                where: { userId, categoryId: { in: expenseCategoryIds } },
-                _sum: { amount: true }
-            }),
-            // Last 6 months history
+            // Last 6 months history - we need dates so we fetch findMany
             prisma.transaction.findMany({
                 where: {
                     userId,
@@ -108,38 +101,48 @@ export class TransactionRepository {
                 },
                 select: { amount: true, currency: true, date: true, categoryId: true }
             }),
-            // Current month breakdown by category and currency
-            prisma.transaction.groupBy({
-                by: ['categoryId', 'currency'],
-                where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
-                _sum: { amount: true }
-            }),
             prisma.budget.findMany({
                 where: { userId, month: now.getMonth() + 1, year: now.getFullYear() },
                 include: { category: true }
             })
         ]);
 
-        // 3. Process Global Totals
+        // Create quick lookup maps for category info
+        const categoryMap = new Map(categories.map(c => [c.id, c]));
+
+        // 2. Process Global and Monthly Totals
         let total_income = 0;
         let total_expenses = 0;
-        incomeTotals.forEach(item => total_income += convertToUSD(item._sum.amount, item.currency));
-        expenseTotals.forEach(item => total_expenses += convertToUSD(item._sum.amount, item.currency));
-
-        // Create quick lookup maps
-        const categoryTypeMap = new Map(categories.map(c => [c.id, c.type]));
-
-        // 4. Process Monthly Totals and Breakdown
         let month_income = 0;
         let month_expenses = 0;
         const breakdownMap = new Map();
 
-        // Initialize breakdown map with all categories
+        // Initialize breakdown map with zeroed categories
         categories.forEach(c => {
             breakdownMap.set(c.id, { category_name: c.name, category_type: c.type, total_amount: 0 });
         });
 
-        monthlyBreakdown.forEach(item => {
+        // Sum up global totals from aggregates
+        transactionAggregates.forEach(item => {
+            const amountUSD = convertToUSD(item._sum.amount, item.currency);
+            const cat = categoryMap.get(item.categoryId);
+            if (cat) {
+                if (cat.type === 'INCOME') total_income += amountUSD;
+                else total_expenses += amountUSD;
+            }
+        });
+
+        // 3. Specifically process current month breakdown
+        // For precision in the breakdown chart, we fetch the month's ones specifically 
+        // to simplify the map logic, or just filter findMany if it's small.
+        // Let's use the groupBy from the month specifically for the Donut chart
+        const monthlyAggs = await prisma.transaction.groupBy({
+            by: ['categoryId', 'currency'],
+            where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
+            _sum: { amount: true }
+        });
+
+        monthlyAggs.forEach(item => {
             const amountUSD = convertToUSD(item._sum.amount, item.currency);
             const catData = breakdownMap.get(item.categoryId);
             if (catData) {
@@ -149,7 +152,7 @@ export class TransactionRepository {
             }
         });
 
-        // 5. Process History (Last 6 Months)
+        // 4. Process History (Last 6 Months)
         const historyMap = new Map();
         for (let i = 0; i < 6; i++) {
             const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
@@ -163,9 +166,11 @@ export class TransactionRepository {
             if (historyMap.has(histKey)) {
                 const amountUSD = convertToUSD(t.amount, t.currency);
                 const h = historyMap.get(histKey);
-                const type = categoryTypeMap.get(t.categoryId);
-                if (type === 'INCOME') h.income += amountUSD;
-                else h.expense += amountUSD;
+                const cat = categoryMap.get(t.categoryId);
+                if (cat) {
+                    if (cat.type === 'INCOME') h.income += amountUSD;
+                    else h.expense += amountUSD;
+                }
             }
         });
 
