@@ -242,7 +242,6 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 
 // --- Dashboard & Data ---
 async function refreshData() {
-    console.log('Starting data refresh...');
     try {
         const [catsRes, dashRes, txRes] = await Promise.all([
             fetchCategories(),
@@ -260,12 +259,9 @@ async function refreshData() {
         if (!token) return;
 
         if (!dashRes || !dashRes.data) {
-            console.error('Dashboard data fetch failed or empty', dashRes);
             if (token) showToast('Could not load dashboard data', 'error');
             return;
         }
-
-        console.log('Dash Data Received:', dashRes.data);
 
         const transactions = txRes.data?.transactions || [];
         const summary = dashRes.data.summary?.allTime || { total_income: 0, total_expenses: 0, total_savings: 0 };
@@ -285,8 +281,6 @@ async function refreshData() {
         const currentHash = window.location.hash.replace('#', '') || 'dashboard';
         if (currentHash === 'transactions') fetchTransactions();
         if (currentHash === 'budgets') fetchBudgets();
-
-        console.log('UI Refresh finished');
     } catch (err) {
         console.error('Data refresh fatal error', err);
         showToast('Connection error. Please refresh.', 'error');
@@ -325,8 +319,6 @@ function renderRecentActivity(transactions) {
 }
 
 function renderCharts(transactions, currentBalance, categoryBreakdown, history, budgetComparison) {
-    console.log('Rendering Charts with:', { txCount: transactions.length, breakdownCount: categoryBreakdown?.length, historyCount: history?.length });
-
     // 1. Cash Flow Summary (Bar Chart: Income vs Expense)
     const trendCtx = document.getElementById('trendChart')?.getContext('2d');
     if (trendCtx) {
@@ -730,7 +722,6 @@ async function fetchBudgets() {
 
     try {
         const res = await apiRequest(`/budgets/status?month=${month}&year=${year}`);
-        console.log(`Fetched ${res.data?.length || 0} budgets for ${month}/${year}`);
         renderBudgetList(res.data);
     } catch (err) {
         showToast('Failed to load budgets', 'error');

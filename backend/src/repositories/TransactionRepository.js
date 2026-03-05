@@ -41,18 +41,24 @@ export class TransactionRepository {
         let { startDate, endDate, categoryId, sortBy, order, page = 1, limit = 100, month, year } = filters;
 
         if (month && year) {
-            startDate = new Date(year, month - 1, 1);
-            endDate = new Date(year, month, 0); // Last day of month
-            endDate.setHours(23, 59, 59, 999);
+            const m = parseInt(month);
+            const y = parseInt(year);
+            if (!isNaN(m) && !isNaN(y)) {
+                startDate = new Date(y, m - 1, 1);
+                endDate = new Date(y, m, 0, 23, 59, 59, 999);
+            }
         }
+
+        // Validity check to prevent Prisma crashes on Invalid Date
+        const isValidDate = (d) => d instanceof Date && !isNaN(d);
 
         const query = {
             where: {
                 userId,
                 AND: [
-                    startDate ? { date: { gte: startDate } } : {},
-                    endDate ? { date: { lte: endDate } } : {},
-                    categoryId ? { categoryId } : {},
+                    isValidDate(startDate) ? { date: { gte: startDate } } : {},
+                    isValidDate(endDate) ? { date: { lte: endDate } } : {},
+                    categoryId && categoryId !== 'null' && categoryId !== 'undefined' ? { categoryId } : {},
                 ],
             },
             orderBy: sortBy ? { [sortBy]: order || "desc" } : { date: "desc" },
@@ -80,7 +86,6 @@ export class TransactionRepository {
 
         // AUTO-SEED: If no categories exist, seed them now before proceeding
         if (categories.length === 0) {
-            console.log(`Auto-seeding categories for user ${userId}`);
             const { AuthService } = await import("../services/AuthService.js");
             const authService = new AuthService();
             await authService.seedDefaultCategories(userId);
