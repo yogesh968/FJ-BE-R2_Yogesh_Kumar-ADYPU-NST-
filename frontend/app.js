@@ -201,8 +201,10 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
         const res = await fetch(`${API_URL}${endpoint}`, options);
         if (res.status === 401) {
-            console.error('Session expired or unauthorized');
-            logout();
+            if (token) {
+                console.error('Session expired or unauthorized');
+                logout();
+            }
             throw new Error('Please sign in again');
         }
 
@@ -227,13 +229,22 @@ async function refreshData() {
     try {
         await fetchCategories();
 
+        // Safeguard: if token was cleared by fetchCategories' apiRequest, stop here
+        if (!token) return;
+
         const [dashRes, txRes] = await Promise.all([
-            apiRequest('/dashboard').catch(e => { console.error('Dash error', e); return { data: null }; }),
-            apiRequest('/transactions?limit=100').catch(e => { console.error('Tx error', e); return { data: { transactions: [] } }; })
+            apiRequest('/dashboard').catch(e => {
+                if (e.message !== 'Please sign in again') console.error('Dash error', e);
+                return { data: null };
+            }),
+            apiRequest('/transactions?limit=100').catch(e => {
+                if (e.message !== 'Please sign in again') console.error('Tx error', e);
+                return { data: { transactions: [] } };
+            })
         ]);
 
         if (!dashRes || !dashRes.data) {
-            console.warn('Dashboard data missing');
+            if (token) console.warn('Dashboard data missing');
             return;
         }
 

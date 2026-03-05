@@ -34,17 +34,18 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "https://i.pravatar.cc", "https://www.gstatic.com", "*"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:52048", "https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app", process.env.FRONTEND_URL || "https://fjproject.vercel.app", "https://cdn.jsdelivr.net"]
+            connectSrc: ["'self'", "http://localhost:3000", "http://localhost:52048", "https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app", "https://fjproject.vercel.app", "https://fj-project.vercel.app", "https://fjproject-qlu33yqr0-yogesh-kumars-projects-b37dbb16.vercel.app", "https://cdn.jsdelivr.net"]
         }
-    }
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
             callback(null, true);
         } else {
-            console.log(origin);
+            console.log('Origin not allowed:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -69,6 +70,7 @@ app.set("json replacer", (key, value) =>
 );
 
 // Routes
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use("/api/v1", router);
 
 // Serve static frontend files
