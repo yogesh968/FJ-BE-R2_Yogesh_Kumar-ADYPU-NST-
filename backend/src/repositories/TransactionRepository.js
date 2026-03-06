@@ -100,6 +100,7 @@ export class TransactionRepository {
             categories = await prisma.category.findMany({ where: { userId } });
         }
 
+        console.log(`[DASHBOARD] Fetching data for user ${userId}...`);
         const [transactionAggregates, historyStats, budgets] = await Promise.all([
             prisma.transaction.groupBy({
                 by: ['categoryId', 'currency'],

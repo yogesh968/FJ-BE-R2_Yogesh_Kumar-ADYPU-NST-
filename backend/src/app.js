@@ -70,6 +70,9 @@ app.set("json replacer", (key, value) =>
     typeof value === 'bigint' ? value.toString() : value
 );
 
+// Health Check
+router.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
+
 // Routes
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use("/api/v1", router);
@@ -87,5 +90,14 @@ app.get("*", (req, res) => {
 
 // Error handling
 app.use(errorHandler);
+
+// Global unhandled error logging
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+});
 
 export default app;
