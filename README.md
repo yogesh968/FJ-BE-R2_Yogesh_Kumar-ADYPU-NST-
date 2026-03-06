@@ -1,7 +1,7 @@
 # Personal Finance Tracker - Senior Backend Architect Implementation
 use these credentials for better experience 
-- **Email: yogakumar221@gmail.com
-- **password : 123456
+- Email: yogakumar221@gmail.com
+- password : 123456
 
 
 
