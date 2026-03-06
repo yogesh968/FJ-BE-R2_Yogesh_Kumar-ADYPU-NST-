@@ -17,6 +17,11 @@ export class TransactionService {
             throw new ApiError(400, "Transaction amount must be positive");
         }
 
+        const dateObj = new Date(data.date);
+        if (isNaN(dateObj.getTime())) {
+            throw new ApiError(400, "Invalid transaction date");
+        }
+
         const category = await categoryRepository.findById(data.categoryId);
         if (!category || category.userId !== userId) {
             throw new ApiError(404, "Category not found");
@@ -29,7 +34,7 @@ export class TransactionService {
                     data: {
                         filePath: file.path,
                         fileType: file.mimetype,
-                        userId: userId // Fixed: missing userId
+                        userId: userId
                     }
                 });
                 receiptId = receipt.id;
@@ -44,7 +49,7 @@ export class TransactionService {
                     currency,
                     description,
                     categoryId,
-                    date: new Date(data.date),
+                    date: dateObj,
                     userId,
                     receiptId
                 },
@@ -56,8 +61,8 @@ export class TransactionService {
                 where: {
                     userId,
                     categoryId: data.categoryId,
-                    month: new Date(data.date).getMonth() + 1,
-                    year: new Date(data.date).getFullYear(),
+                    month: dateObj.getMonth() + 1,
+                    year: dateObj.getFullYear(),
                 },
             });
 
