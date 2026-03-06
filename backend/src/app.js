@@ -21,7 +21,7 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5000',
     'http://localhost:52048',
-    process.env.FRONTEND_URL || 'https://fjproject-qlu33yqr0-yogesh-kumars-projects-b37dbb16.vercel.app'
+    process.env.FRONTEND_URL || 'https://fjproject.vercel.app'
 ];
 
 // Middleware
