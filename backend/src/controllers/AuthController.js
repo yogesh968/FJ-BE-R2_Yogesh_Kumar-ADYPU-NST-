@@ -62,7 +62,8 @@ export class AuthController {
 
     async getProfile(req, res, next) {
         try {
-            res.status(200).json(new ApiResponse(200, req.user, "Profile fetched successfully"));
+            const sanitizedUser = authService.sanitizeUser(req.user);
+            res.status(200).json(new ApiResponse(200, sanitizedUser, "Profile fetched successfully"));
         } catch (error) {
             next(error);
         }

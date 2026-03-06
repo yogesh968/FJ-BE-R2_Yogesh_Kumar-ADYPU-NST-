@@ -91,11 +91,11 @@
 
             <div class="form-group">
                 <label>Email address</label>
-                <input type="email" id="email" placeholder="name@company.com" value="test@example.com">
+                <input type="email" id="email" placeholder="name@company.com">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="password" value="password123">
+                <input type="password" id="password" placeholder="••••••••">
             </div>
 
             <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 1.5rem;"
@@ -113,8 +113,7 @@
                 <div style="flex: 1; height: 1px; background: var(--border);"></div>
             </div>
 
-            <button class="btn btn-outline" style="width: 100%; justify-content: center;"
-                onclick="location.href='https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app/api/v1/auth/google'">
+            <button class="btn btn-outline" style="width: 100%; justify-content: center;" onclick="loginWithGoogle()">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" style="width: 18px;">
                 Continue with Google
             </button>
@@ -436,29 +435,20 @@
 
             <!-- Profile Section -->
             <section id="profile" class="hidden">
-                <div style="margin-bottom: 3rem;">
-                    <h2
-                        style="font-family: 'Outfit', sans-serif; font-size: 2.25rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">
-                        Account Settings</h2>
-                    <p style="color: var(--text-muted); font-size: 1rem;">Manage your identity, security, and
-                        preferences.</p>
-                </div>
-
-                <div class="profile-grid">
-                    <!-- Identity Sidebar -->
-                    <div class="card" style="text-align: center; padding: 3rem 2rem;">
-                        <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 1.5rem; cursor: pointer;"
-                            onclick="document.getElementById('avatar-input').click()">
+                <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+                    <div class="profile-banner"></div>
+                    <div class="profile-header-wrapper">
+                        <div class="avatar-container-premium" onclick="document.getElementById('avatar-input').click()"
+                            style="cursor: pointer;">
                             <div id="prof-initial-large"
-                                style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #4f46e5); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: white; border: 4px solid white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+                                style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #4f46e5); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: white; overflow: hidden;">
                                 ?
                             </div>
                             <!-- Hidden File Input -->
                             <input type="file" id="avatar-input" style="display: none;" accept="image/*"
                                 onchange="uploadAvatar(this)">
-
                             <div
-                                style="position: absolute; bottom: 0; right: 0; background: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; pointer-events: none;">
+                                style="position: absolute; bottom: 5px; right: 5px; background: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; pointer-events: none;">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
                                     viewBox="0 0 24 24">
                                     <path
@@ -468,100 +458,132 @@
                                 </svg>
                             </div>
                         </div>
-                        <h3 id="prof-name-display" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">
-                            User Name</h3>
-                        <p id="prof-email-display"
-                            style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">email@example.com
-                        </p>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <h2 id="prof-name-display" style="font-size: 1.75rem; font-weight: 800; color: #111827;">
+                                User
+                                Name</h2>
+                            <p id="prof-email-display" style="color: var(--text-muted); font-weight: 500;">
+                                email@example.com</p>
+                        </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                             <div
-                                style="padding: 1rem; background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0; display: flex; align-items: center; gap: 0.75rem;">
+                                style="padding: 0.5rem 1rem; background: #f0fdf4; border-radius: 100px; border: 1px solid #bbf7d0; display: flex; align-items: center; gap: 0.5rem;">
                                 <div
-                                    style="background: var(--success); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
+                                    style="background: var(--success); color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
                                     ✓</div>
-                                <div>
-                                    <p
-                                        style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #166534; font-weight: 700;">
-                                        Account Status</p>
-                                    <p style="font-weight: 600; color: #166534; font-size: 0.9rem;">Active Session</p>
-                                </div>
+                                <span style="font-weight: 700; color: #166534; font-size: 0.8rem;">Active
+                                    Session</span>
                             </div>
                             <div
-                                style="padding: 1rem; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe; display: flex; align-items: center; gap: 0.75rem;">
-                                <div
-                                    style="background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
-                                    ★</div>
-                                <div>
-                                    <p
-                                        style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #1e40af; font-weight: 700;">
-                                        Membership</p>
-                                    <p style="font-weight: 600; color: #1e40af; font-size: 0.9rem;">Standard Tier</p>
-                                </div>
+                                style="padding: 0.5rem 1rem; background: #eff6ff; border-radius: 100px; border: 1px solid #bfdbfe; display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: var(--primary); font-size: 1rem;">★</span>
+                                <span style="font-weight: 700; color: #1e40af; font-size: 0.8rem;">Standard Tier</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Main Settings -->
-                    <div style="display: flex; flex-direction: column; gap: 2rem;">
-                        <div class="card">
-                            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Account
-                                Intelligence</h4>
+                <div class="profile-grid">
+                    <!-- Left Column -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="card glass-card">
+                            <h3 class="profile-section-title">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                    </path>
+                                </svg>
+                                Account Intelligence
+                            </h3>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                 <div
-                                    style="background: #f9fafb; padding: 1.25rem; border-radius: 12px; text-align: center; border: 1px solid #f3f4f6;">
+                                    style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border); text-align: center;">
                                     <p
-                                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700;">
-                                        Ledger Entries</p>
+                                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; letter-spacing: 0.05em;">
+                                        Total Entries</p>
                                     <p id="prof-tx-count"
                                         style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">
                                         Syncing...</p>
                                 </div>
+                                <div
+                                    style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border); text-align: center;">
+                                    <p
+                                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; letter-spacing: 0.05em;">
+                                        Account Type</p>
+                                    <p style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">Personal</p>
+                                </div>
                             </div>
-                            <div
-                                style="background: #f9fafb; padding: 1.25rem; border-radius: 12px; text-align: center; border: 1px solid #f3f4f6;">
-                                <p
-                                    style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700;">
-                                    Account Type</p>
-                                <p style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">Personal</p>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="profile-section-title">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                    </path>
+                                </svg>
+                                Security Protocol
+                            </h3>
+                            <div class="form-group">
+                                <label>Change Password</label>
+                                <input type="password" id="update-password" placeholder="••••••••"
+                                    style="background: #f9fafb;">
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Enter a new
+                                    password to update your security vault access.</p>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Personal
-                            Information</h4>
-                        <div class="form-group">
-                            <label style="font-weight: 600; color: #374151;">Display Name</label>
-                            <input type="text" id="update-name" placeholder="How should we call you?"
-                                style="background: #fdfdfd; border: 1px solid #e5e7eb;">
-                        </div>
-                        <div class="form-group">
-                            <label style="font-weight: 600; color: #374151;">Email Address</label>
-                            <input type="email" id="prof-email-readonly" readonly
-                                style="background: #f3f4f6; cursor: not-allowed; color: #6b7280; border: 1px solid #e5e7eb;">
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Security
-                                Restriction: Email cannot be changed for OAuth accounts.</p>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">Security Protocol
-                        </h4>
-                        <div class="form-group">
-                            <label style="font-weight: 600; color: #374151;">Update Password</label>
-                            <input type="password" id="update-password" placeholder="Leave blank to keep current">
-                        </div>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
                             <button class="btn btn-primary" onclick="updateProfile()"
-                                style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600;">Save New
-                                Protocol</button>
+                                style="width: 100%; justify-content: center; margin-top: 0.5rem;">Update Security
+                                Vault</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="card">
+                        <h3 class="profile-section-title">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                </path>
+                            </svg>
+                            Personal Information
+                        </h3>
+                        <div class="form-group">
+                            <label>Legal Name / Alias</label>
+                            <input type="text" id="update-name" placeholder="Yogesh Kumar">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Access Point</label>
+                            <div style="position: relative;">
+                                <input type="email" id="prof-email-readonly" readonly
+                                    style="background: #f3f4f6; cursor: not-allowed; color: #6b7280; padding-right: 3rem;">
+                                <div
+                                    style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p
+                                style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem; line-height: 1.4;">
+                                <strong>System Note:</strong> Your email address is linked to your primary
+                                authentication provider and cannot be modified directly within this workspace.
+                            </p>
+                        </div>
+
+                        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #f3f4f6;">
+                            <button class="btn btn-primary" onclick="updateProfile()" style="padding: 0.8rem 2rem;">Save
+                                Name Changes</button>
                         </div>
                     </div>
                 </div>
-    </div>
-    </section>
-    </main>
+            </section>
+        </main>
     </div>
 
     <!-- Modals -->

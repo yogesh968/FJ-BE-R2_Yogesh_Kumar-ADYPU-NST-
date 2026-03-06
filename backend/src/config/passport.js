@@ -26,8 +26,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                         if (email) {
                             user = await userRepository.findByEmail(email);
                             if (user) {
-                                // Merge account
-                                user = await userRepository.updateProfile(user.id, { googleId: profile.id });
+                                // Merge and sync name/avatar if not present or just update to match Google
+                                user = await userRepository.updateProfile(user.id, {
+                                    googleId: profile.id,
+                                    name: user.name === "test" ? profile.displayName : (user.name || profile.displayName),
+                                    avatar: user.avatar || profile.photos?.[0]?.value
+                                });
                             } else {
                                 // Create new user
                                 user = await userRepository.createUser({

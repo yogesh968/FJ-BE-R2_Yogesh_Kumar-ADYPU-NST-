@@ -43,8 +43,16 @@ router.get(
     passport.authenticate("google", { session: false }),
     (req, res) => {
         const accessToken = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        // In production, redirect to frontend with token
-        res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5000"}?token=${accessToken}`);
+
+        // Determine redirect target based on request host
+        const host = req.get('host');
+        let redirectUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+        if (host && (host.includes('localhost') || host.includes('127.0.0.1'))) {
+            redirectUrl = "http://localhost:3000";
+        }
+
+        res.redirect(`${redirectUrl}?token=${accessToken}`);
     }
 );
 

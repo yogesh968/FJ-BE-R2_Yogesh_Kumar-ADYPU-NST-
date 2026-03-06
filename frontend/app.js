@@ -1,5 +1,16 @@
-const API_URL = 'https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app/api/v1';
-// const API_URL = 'http://localhost:3000/api/v1';
+const getBaseUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000';
+    }
+    // Check if we are currently on the vercel deployment of the backend
+    if (window.location.hostname.includes('vercel.app')) {
+        return window.location.origin;
+    }
+    // Default fallback
+    return 'https://fj-be-r2-yogesh-kumar-adypu-nst.vercel.app';
+};
+
+const API_URL = `${getBaseUrl()}/api/v1`;
 let token = localStorage.getItem('token');
 let charts = { trend: null, category: null, budget: null };
 
@@ -15,10 +26,11 @@ function checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
     if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        localStorage.removeItem('user'); // Force fresh fetch for new token
+        // Clear param from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
         token = urlToken;
-        localStorage.setItem('token', token);
-        // Clear query params to clean the URL
-        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
     }
 
     const landingPage = document.getElementById('landing-page');
@@ -30,15 +42,16 @@ function checkAuth() {
         appPage.classList.remove('hidden');
         authModal.classList.add('hidden');
 
-        // Fetch profile if not in localStorage (common after Google redirect)
-        if (!localStorage.getItem('user')) {
-            apiRequest('/auth/profile').then(res => {
-                localStorage.setItem('user', JSON.stringify(res.data));
-                updateTopLevelUserUI();
-            });
-        } else {
+        // Always fetch profile to ensure sync
+        apiRequest('/auth/profile').then(res => {
+            localStorage.setItem('user', JSON.stringify(res.data));
             updateTopLevelUserUI();
-        }
+        }).catch(err => {
+            console.error('Failed to sync profile', err);
+            if (err.message === 'Please sign in again') {
+                logout();
+            }
+        });
 
         populateTimeDropdowns();
         const initialRoute = window.location.hash.replace('#', '') || 'dashboard';
@@ -64,6 +77,30 @@ function updateTopLevelUserUI() {
             sideAvatar.innerHTML = `<img src="${getFullImageUrl(user.avatar)}" style="width: 100%; height: 100%; object-fit: cover;">`;
         } else {
             sideAvatar.innerText = (user.name || 'U').charAt(0).toUpperCase();
+        }
+    }
+
+    // Also update profile section if it's visible or being initialized
+    const profNameDisplay = document.getElementById('prof-name-display');
+    const profEmailDisplay = document.getElementById('prof-email-display');
+    const profEmailReadonly = document.getElementById('prof-email-readonly');
+    const updateNameInput = document.getElementById('update-name');
+    const profInitialLarge = document.getElementById('prof-initial-large');
+
+    if (profNameDisplay) {
+        profNameDisplay.innerText = user.name || 'User';
+        profNameDisplay.style.color = '#111827'; // Ensure color is set
+    }
+    if (profEmailDisplay) profEmailDisplay.innerText = user.email;
+    if (profEmailReadonly) profEmailReadonly.value = user.email;
+    if (updateNameInput) updateNameInput.value = user.name || '';
+
+    if (profInitialLarge) {
+        if (user.avatar) {
+            profInitialLarge.innerHTML = `<img src="${getFullImageUrl(user.avatar)}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            profInitialLarge.innerText = (user.name || 'U').charAt(0).toUpperCase();
+            profInitialLarge.innerHTML = (user.name || 'U').charAt(0).toUpperCase(); // Double check
         }
     }
 }
@@ -170,6 +207,7 @@ async function login() {
 function logout() {
     token = null;
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     window.location.hash = '';
     checkAuth();
 }
@@ -608,10 +646,10 @@ async function updateProfile() {
     try {
         const res = await apiRequest('/auth/profile', 'PATCH', { name, ...(password && { password }) });
         localStorage.setItem('user', JSON.stringify(res.data));
-        showToast('Profile updated');
+        showToast('Profile updated successfully');
         updateTopLevelUserUI();
     } catch (err) {
-        showToast('Update failed', 'error');
+        showToast(err.message || 'Update failed. Check your security protocol.', 'error');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -892,7 +930,11 @@ function showSection(id, event = null, updateHash = true) {
 
     // Prevent recursive calls and redundant animations if already on the section
     const currentActive = document.querySelector('section:not(.hidden)');
-    if (currentActive && currentActive.id === id) return;
+    if (currentActive && currentActive.id === id) {
+        // Even if already on section, if it's profile, ensure UI is fresh
+        if (id === 'profile') updateTopLevelUserUI();
+        return;
+    }
 
     validSections.forEach(s => {
         const el = document.getElementById(s);
@@ -907,31 +949,16 @@ function showSection(id, event = null, updateHash = true) {
     if (target) {
         target.classList.remove('hidden');
         if (id === 'profile') {
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user) {
-                document.getElementById('prof-name-display').innerText = user.name || 'User';
-                document.getElementById('prof-email-display').innerText = user.email;
-                document.getElementById('prof-email-readonly').value = user.email;
+            updateTopLevelUserUI();
 
-                const initialsEl = document.getElementById('prof-initial-large');
-                if (user.avatar) {
-                    initialsEl.innerHTML = `<img src="${getFullImageUrl(user.avatar)}" style="width: 100%; height: 100%; object-fit: cover;">`;
-                } else {
-                    initialsEl.innerText = (user.name || 'U').charAt(0).toUpperCase();
-                }
-
-                document.getElementById('update-name').value = user.name || '';
-
-                // Fetch dynamic stats for profile
-                apiRequest('/transactions?limit=1').then(res => {
-                    const count = res.data?.totalTransactions || 0;
-                    document.getElementById('prof-tx-count').innerText = `${count} Ledger Entries`;
-                }).catch(() => {
-                    document.getElementById('prof-tx-count').innerText = '0 Ledger Entries';
-                });
-            }
+            // Fetch dynamic stats for profile
+            apiRequest('/transactions?limit=1').then(res => {
+                const count = res.data?.total || 0;
+                document.getElementById('prof-tx-count').innerText = `${count} Ledger Entries`;
+            }).catch(() => {
+                document.getElementById('prof-tx-count').innerText = '0 Ledger Entries';
+            });
         }
-        target.classList.remove('hidden');
         // Kill existing animations to prevent "white screen" (opacity stuck at near-zero)
         gsap.killTweensOf(target);
         gsap.fromTo(target,
@@ -1011,3 +1038,6 @@ window.login = login;
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
 window.toggleAuth = toggleAuth;
+window.loginWithGoogle = () => {
+    window.location.href = `${API_URL}/auth/google`;
+};
