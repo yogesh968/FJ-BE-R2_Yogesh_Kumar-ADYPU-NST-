@@ -74,7 +74,7 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use("/api/v1", router);
 
 // Serve static frontend files
-const frontendPath = path.join(__dirname, "../../frontend");
+const frontendPath = path.join(__dirname, "../public");
 app.use(express.static(frontendPath));
 
 // Redirect all other traffic to index.html (SPA logic)
