@@ -100,26 +100,27 @@ export class TransactionRepository {
             categories = await prisma.category.findMany({ where: { userId } });
         }
 
-        console.log(`[DASHBOARD] Fetching data for user ${userId}...`);
-        const [transactionAggregates, historyStats, budgets] = await Promise.all([
-            prisma.transaction.groupBy({
-                by: ['categoryId', 'currency'],
-                where: { userId },
-                _sum: { amount: true }
-            }),
-            // Last 6 months history - we need dates so we fetch findMany
-            prisma.transaction.findMany({
-                where: {
-                    userId,
-                    date: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) }
-                },
-                select: { amount: true, currency: true, date: true, categoryId: true }
-            }),
-            prisma.budget.findMany({
-                where: { userId, month: now.getMonth() + 1, year: now.getFullYear() },
-                include: { category: true }
-            })
-        ]);
+        console.log(`[DASHBOARD] Fetching aggregates for user ${userId}...`);
+        const transactionAggregates = await prisma.transaction.groupBy({
+            by: ['categoryId', 'currency'],
+            where: { userId },
+            _sum: { amount: true }
+        });
+
+        console.log(`[DASHBOARD] Fetching history...`);
+        const historyStats = await prisma.transaction.findMany({
+            where: {
+                userId,
+                date: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) }
+            },
+            select: { amount: true, currency: true, date: true, categoryId: true }
+        });
+
+        console.log(`[DASHBOARD] Fetching budgets...`);
+        const budgets = await prisma.budget.findMany({
+            where: { userId, month: now.getMonth() + 1, year: now.getFullYear() },
+            include: { category: true }
+        });
 
         // Create quick lookup maps for category info
         const categoryMap = new Map(categories.map(c => [c.id, c]));
