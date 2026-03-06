@@ -1,3 +1,6 @@
+let handler;
+let initError = null;
+
 try {
     const { default: app } = await import("../src/app.js");
     handler = app;
