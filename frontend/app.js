@@ -1087,3 +1087,57 @@ window.toggleAuth = toggleAuth;
 window.loginWithGoogle = () => {
     window.location.href = `${API_URL}/auth/google`;
 };
+
+// AI Chatbot Logic
+function toggleAIChat() {
+    const chat = document.getElementById('ai-chat-container');
+    chat.classList.toggle('active');
+    if (chat.classList.contains('active')) {
+        document.getElementById('ai-chat-input').focus();
+    }
+}
+
+function handleAIChatKey(e) {
+    if (e.key === 'Enter') sendAIChatMessage();
+}
+
+async function sendAIChatMessage() {
+    const input = document.getElementById('ai-chat-input');
+    const container = document.getElementById('ai-chat-messages');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    // Append User Message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'ai-msg user';
+    userMsg.textContent = message;
+    container.appendChild(userMsg);
+
+    input.value = '';
+    container.scrollTop = container.scrollHeight;
+
+    // Append Loading State
+    const botMsg = document.createElement('div');
+    botMsg.className = 'ai-msg bot';
+    botMsg.id = 'ai-loading-msg';
+    botMsg.innerHTML = '<div class="spinner" style="border-width:2px; width:15px; height:15px; border-color: #6366f1 transparent #6366f1 transparent;"></div>';
+    container.appendChild(botMsg);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+        const res = await apiRequest('/ai/chat', 'POST', { message });
+        botMsg.id = '';
+        botMsg.textContent = res.data.response;
+    } catch (err) {
+        botMsg.id = '';
+        botMsg.textContent = 'Sorry, my neural circuits are a bit busy. Please try again.';
+        botMsg.style.color = 'var(--error)';
+    } finally {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+window.toggleAIChat = toggleAIChat;
+window.handleAIChatKey = handleAIChatKey;
+window.sendAIChatMessage = sendAIChatMessage;

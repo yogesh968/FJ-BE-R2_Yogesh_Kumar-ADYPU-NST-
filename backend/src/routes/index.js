@@ -4,6 +4,7 @@ import { CategoryController } from "../controllers/CategoryController.js";
 import { TransactionController } from "../controllers/TransactionController.js";
 import { BudgetController } from "../controllers/BudgetController.js";
 import { ReportingController } from "../controllers/ReportingController.js";
+import { AIController } from "../controllers/AIController.js";
 import { authMiddleware } from "../middleware/AuthMiddleware.js";
 import { loginRateLimiter } from "../middleware/RateLimiter.js";
 import { validate } from "../middleware/ValidationMiddleware.js";
@@ -25,6 +26,7 @@ const categoryController = new CategoryController();
 const transactionController = new TransactionController();
 const budgetController = new BudgetController();
 const reportingController = new ReportingController();
+const aiController = new AIController();
 
 // Auth routes
 router.post("/auth/register", validate(registerSchema), authController.register);
@@ -82,5 +84,8 @@ router.get("/reports/export-pdf", authMiddleware, reportingController.exportPDF)
 
 // Dashboard
 router.get("/dashboard", authMiddleware, transactionController.getDashboard);
+
+// AI Chat
+router.post("/ai/chat", authMiddleware, aiController.chat);
 
 export default router;
