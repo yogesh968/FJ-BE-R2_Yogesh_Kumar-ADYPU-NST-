@@ -40,8 +40,9 @@ export class TransactionService {
                 receiptId = receipt.id;
             }
 
-            // Cleanup data to avoid passing extra fields or duplicate userId/receiptId
-            const { categoryId, description, amount, currency } = data;
+            // Cleanup data and ensure currency has a value
+            const { categoryId, description, amount } = data;
+            const currency = data.currency || "USD";
 
             const transaction = await tx.transaction.create({
                 data: {
