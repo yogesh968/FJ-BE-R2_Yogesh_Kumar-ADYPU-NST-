@@ -1,4 +1,9 @@
 # Personal Finance Tracker - Senior Backend Architect Implementation
+use these credentials for better experience 
+- **Email: yogakumar221@gmail.com
+- **password : 123456
+
+
 
 This repository contains a production-level implementation of a Personal Finance Tracker using Node.js, Express.js, and Prisma with PostgreSQL.
 
