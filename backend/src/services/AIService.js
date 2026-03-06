@@ -50,7 +50,10 @@ export class AIService {
                 - Active Categories: ${context.categories.map(c => c.name).join(", ")}
                 
                 Recent granular ledger entries (Last 10):
-                ${context.lastTransactions.map(t => `- [${t.date.toISOString().split('T')[0]}] ${t.description}: ${t.type === 'INCOME' ? '+' : '-'}$${t.amount} (${t.category})`).join('\n')}
+                ${context.lastTransactions.length > 0 ? context.lastTransactions.map(t => {
+                const dateStr = t.date instanceof Date ? t.date.toISOString().split('T')[0] : String(t.date).split('T')[0];
+                return `- [${dateStr}] ${t.description || 'No description'}: ${t.type === 'INCOME' ? '+' : '-'}$${t.amount} (${t.category})`;
+            }).join('\n') : "No recent transactions found."}
 
                 Guidelines:
                 1. Be professional, encouraging, and clear.

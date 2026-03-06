@@ -9,6 +9,7 @@ const EXCHANGE_RATES = {
 };
 
 function convertToUSD(amount, currency) {
+    if (amount === null || amount === undefined) return 0;
     const rate = EXCHANGE_RATES[currency] || 1.0;
     return parseFloat(amount.toString()) * rate;
 }
@@ -86,9 +87,16 @@ export class TransactionRepository {
 
         // AUTO-SEED: If no categories exist, seed them now before proceeding
         if (categories.length === 0) {
-            const { AuthService } = await import("../services/AuthService.js");
-            const authService = new AuthService();
-            await authService.seedDefaultCategories(userId);
+            const defaults = [
+                { name: "Salary", type: "INCOME", userId },
+                { name: "Investment", type: "INCOME", userId },
+                { name: "Rent", type: "EXPENSE", userId },
+                { name: "Groceries", type: "EXPENSE", userId },
+                { name: "Utilities", type: "EXPENSE", userId },
+                { name: "Entertainment", type: "EXPENSE", userId },
+                { name: "Transport", type: "EXPENSE", userId }
+            ];
+            await prisma.category.createMany({ data: defaults, skipDuplicates: true });
             categories = await prisma.category.findMany({ where: { userId } });
         }
 
@@ -166,7 +174,10 @@ export class TransactionRepository {
         }
 
         historyStats.forEach(t => {
+            if (!t.date) return;
             const txDate = new Date(t.date);
+            if (isNaN(txDate.getTime())) return;
+
             const histKey = `${txDate.getFullYear()}-${txDate.getMonth()}`;
             if (historyMap.has(histKey)) {
                 const amountUSD = convertToUSD(t.amount, t.currency);
