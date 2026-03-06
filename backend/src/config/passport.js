@@ -19,57 +19,52 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
+                    console.log(`[AUTH] Google login attempt: ${profile.emails?.[0]?.value}`);
+                    const email = profile.emails?.[0]?.value;
+                    if (!email) return done(new Error("Email not provided by Google"), false);
+
+                    // 1. Find or create user
                     let user = await userRepository.findByGoogleId(profile.id);
 
                     if (!user) {
-                        const email = profile.emails?.[0]?.value;
-                        if (email) {
-                            user = await userRepository.findByEmail(email);
-                            if (user) {
-                                user = await userRepository.updateProfile(user.id, {
-                                    googleId: profile.id,
-                                    name: user.name === "test" ? profile.displayName : (user.name || profile.displayName),
-                                    avatar: user.avatar || profile.photos?.[0]?.value
-                                });
-                            } else {
-                                user = await userRepository.createUser({
-                                    googleId: profile.id,
-                                    email: email,
-                                    name: profile.displayName,
-                                });
-
-                                // Seed default categories for new Google user safely
-                                const defaults = [
-                                    { name: "Salary", type: "INCOME", userId: user.id },
-                                    { name: "Investment", type: "INCOME", userId: user.id },
-                                    { name: "Rent", type: "EXPENSE", userId: user.id },
-                                    { name: "Groceries", type: "EXPENSE", userId: user.id },
-                                    { name: "Utilities", type: "EXPENSE", userId: user.id },
-                                    { name: "Entertainment", type: "EXPENSE", userId: user.id },
-                                    { name: "Transport", type: "EXPENSE", userId: user.id }
-                                ];
-                                await prisma.category.createMany({ data: defaults, skipDuplicates: true });
-                            }
-                        }
-                    } else {
-                        // Ensure categories exist even for returning users
-                        const cats = await prisma.category.findMany({ where: { userId: user.id } });
-                        if (cats.length === 0) {
-                            const defaults = [
-                                { name: "Salary", type: "INCOME", userId: user.id },
-                                { name: "Investment", type: "INCOME", userId: user.id },
-                                { name: "Rent", type: "EXPENSE", userId: user.id },
-                                { name: "Groceries", type: "EXPENSE", userId: user.id },
-                                { name: "Utilities", type: "EXPENSE", userId: user.id },
-                                { name: "Entertainment", type: "EXPENSE", userId: user.id },
-                                { name: "Transport", type: "EXPENSE", userId: user.id }
-                            ];
-                            await prisma.category.createMany({ data: defaults, skipDuplicates: true });
+                        // Check if email already exists
+                        user = await userRepository.findByEmail(email);
+                        if (user) {
+                            // Link Google account to existing email
+                            user = await userRepository.updateProfile(user.id, {
+                                googleId: profile.id,
+                                avatar: user.avatar || profile.photos?.[0]?.value
+                            });
+                        } else {
+                            // Create new user
+                            user = await userRepository.createUser({
+                                googleId: profile.id,
+                                email: email,
+                                name: profile.displayName || "Google User",
+                                avatar: profile.photos?.[0]?.value
+                            });
                         }
                     }
 
-                    return done(null, user || false);
+                    // 2. Ensure categories exist (Sequential for stability)
+                    const count = await prisma.category.count({ where: { userId: user.id } });
+                    if (count === 0) {
+                        console.log(`[AUTH] Seeding categories for user ${user.id}`);
+                        const defaults = [
+                            { name: "Salary", type: "INCOME", userId: user.id },
+                            { name: "Investment", type: "INCOME", userId: user.id },
+                            { name: "Rent", type: "EXPENSE", userId: user.id },
+                            { name: "Groceries", type: "EXPENSE", userId: user.id },
+                            { name: "Utilities", type: "EXPENSE", userId: user.id },
+                            { name: "Entertainment", type: "EXPENSE", userId: user.id },
+                            { name: "Transport", type: "EXPENSE", userId: user.id }
+                        ];
+                        await prisma.category.createMany({ data: defaults, skipDuplicates: true });
+                    }
+
+                    return done(null, user);
                 } catch (error) {
+                    console.error("[AUTH] Google Strategy Error:", error);
                     return done(error, false);
                 }
             }
