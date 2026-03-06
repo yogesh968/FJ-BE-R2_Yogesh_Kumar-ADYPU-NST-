@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { UserRepository } from "../repositories/UserRepository.js";
 import dotenv from "dotenv";
+import prisma from "./db.js";
 
 dotenv.config();
 
@@ -21,40 +22,49 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                     let user = await userRepository.findByGoogleId(profile.id);
 
                     if (!user) {
-                        // Check if user exists with the same email
                         const email = profile.emails?.[0]?.value;
                         if (email) {
                             user = await userRepository.findByEmail(email);
                             if (user) {
-                                // Merge and sync name/avatar if not present or just update to match Google
                                 user = await userRepository.updateProfile(user.id, {
                                     googleId: profile.id,
                                     name: user.name === "test" ? profile.displayName : (user.name || profile.displayName),
                                     avatar: user.avatar || profile.photos?.[0]?.value
                                 });
                             } else {
-                                // Create new user
                                 user = await userRepository.createUser({
                                     googleId: profile.id,
                                     email: email,
                                     name: profile.displayName,
                                 });
 
-                                // Seed default categories for new Google user
-                                const { AuthService } = await import("../services/AuthService.js");
-                                const authService = new AuthService();
-                                await authService.seedDefaultCategories(user.id);
+                                // Seed default categories for new Google user safely
+                                const defaults = [
+                                    { name: "Salary", type: "INCOME", userId: user.id },
+                                    { name: "Investment", type: "INCOME", userId: user.id },
+                                    { name: "Rent", type: "EXPENSE", userId: user.id },
+                                    { name: "Groceries", type: "EXPENSE", userId: user.id },
+                                    { name: "Utilities", type: "EXPENSE", userId: user.id },
+                                    { name: "Entertainment", type: "EXPENSE", userId: user.id },
+                                    { name: "Transport", type: "EXPENSE", userId: user.id }
+                                ];
+                                await prisma.category.createMany({ data: defaults, skipDuplicates: true });
                             }
                         }
                     } else {
-                        // Existing Google user - double check if they have categories (migration safeguard)
-                        const { CategoryRepository } = await import("../repositories/CategoryRepository.js");
-                        const categoryRepository = new CategoryRepository();
-                        const cats = await categoryRepository.findByUserId(user.id);
+                        // Ensure categories exist even for returning users
+                        const cats = await prisma.category.findMany({ where: { userId: user.id } });
                         if (cats.length === 0) {
-                            const { AuthService } = await import("../services/AuthService.js");
-                            const authService = new AuthService();
-                            await authService.seedDefaultCategories(user.id);
+                            const defaults = [
+                                { name: "Salary", type: "INCOME", userId: user.id },
+                                { name: "Investment", type: "INCOME", userId: user.id },
+                                { name: "Rent", type: "EXPENSE", userId: user.id },
+                                { name: "Groceries", type: "EXPENSE", userId: user.id },
+                                { name: "Utilities", type: "EXPENSE", userId: user.id },
+                                { name: "Entertainment", type: "EXPENSE", userId: user.id },
+                                { name: "Transport", type: "EXPENSE", userId: user.id }
+                            ];
+                            await prisma.category.createMany({ data: defaults, skipDuplicates: true });
                         }
                     }
 
