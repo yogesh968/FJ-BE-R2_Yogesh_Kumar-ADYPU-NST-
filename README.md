@@ -44,7 +44,8 @@ This repository contains a production-level implementation of a Personal Finance
 
 3. **Running the App**:
    ```bash
-   npm run dev or
+   npm run dev
+   or
    npm start
    ```
 
