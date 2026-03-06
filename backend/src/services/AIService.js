@@ -15,12 +15,10 @@ const categoryRepository = new CategoryRepository();
 export class AIService {
     async getChatResponse(userId, message) {
         try {
-            // Fetch user context for the AI
-            const [dashSummary, categories, lastTransactions] = await Promise.all([
-                transactionRepository.getDashboardSummary(userId),
-                categoryRepository.findAll(userId),
-                transactionRepository.findAll(userId, { limit: 10, sortBy: 'date', order: 'desc' })
-            ]);
+            // Fetch user context for the AI sequentially to save connections
+            const dashSummary = await transactionRepository.getDashboardSummary(userId);
+            const categories = await categoryRepository.findAll(userId);
+            const lastTransactions = await transactionRepository.findAll(userId, { limit: 10, sortBy: 'date', order: 'desc' });
 
             const context = {
                 totalIncome: dashSummary.allTime.total_income,

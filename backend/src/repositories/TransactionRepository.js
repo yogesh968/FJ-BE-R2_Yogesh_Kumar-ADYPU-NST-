@@ -68,10 +68,8 @@ export class TransactionRepository {
             include: { category: true },
         };
 
-        const [transactions, total] = await Promise.all([
-            prisma.transaction.findMany(query),
-            prisma.transaction.count({ where: query.where }),
-        ]);
+        const transactions = await prisma.transaction.findMany(query);
+        const total = await prisma.transaction.count({ where: query.where });
 
         return { transactions, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
