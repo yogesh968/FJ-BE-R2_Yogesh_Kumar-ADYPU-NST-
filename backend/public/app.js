@@ -520,50 +520,100 @@ function renderCharts(transactions, currentBalance, categoryBreakdown, history, 
             });
         }
 
-        // 4. Daily Spending Intensity (Line Chart)
+        // 4. Daily Financial Intensity (Line Chart: Expense & Income)
         const dailyCtx = document.getElementById('dailyChart')?.getContext('2d');
         if (dailyCtx) {
             if (charts.daily) charts.daily.destroy();
 
             // Group last 30 days transactions by day
             const now = new Date();
-            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-            const dailyGroups = {};
+            // Start of today (local)
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // 29 days ago + today = 30 days
+            const thirtyDaysAgo = new Date(today.getTime() - (29 * 24 * 60 * 60 * 1000));
+
+            const expenseGroups = {};
+            const incomeGroups = {};
 
             for (let i = 0; i < 30; i++) {
                 const d = new Date(thirtyDaysAgo.getTime() + (i * 24 * 60 * 60 * 1000));
-                dailyGroups[d.toISOString().split('T')[0]] = 0;
+                const dStr = d.toISOString().split('T')[0];
+                expenseGroups[dStr] = 0;
+                incomeGroups[dStr] = 0;
             }
 
             transactions.forEach(t => {
+                if (!t.date) return;
                 const dStr = t.date.split('T')[0];
-                if (dailyGroups[dStr] !== undefined && t.category.type === 'EXPENSE') {
-                    dailyGroups[dStr] += t.amount;
+                if (expenseGroups[dStr] !== undefined) {
+                    if (t.category.type === 'EXPENSE') {
+                        expenseGroups[dStr] += t.amount;
+                    } else if (t.category.type === 'INCOME') {
+                        incomeGroups[dStr] += t.amount;
+                    }
                 }
             });
 
             charts.daily = new Chart(dailyCtx, {
                 type: 'line',
                 data: {
-                    labels: Object.keys(dailyGroups).map(k => k.split('-')[2]), // only days
-                    datasets: [{
-                        label: 'Daily Spend',
-                        data: Object.values(dailyGroups),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 5
-                    }]
+                    labels: Object.keys(expenseGroups).map(k => k.split('-')[2]), // only days
+                    datasets: [
+                        {
+                            label: 'Daily Spending',
+                            data: Object.values(expenseGroups),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Daily Income',
+                            data: Object.values(incomeGroups),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            borderWidth: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 8,
+                                usePointStyle: true,
+                                font: { size: 10, family: 'Inter' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1f2937',
+                            padding: 10
+                        }
+                    },
                     scales: {
                         x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                        y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#f3f4f6' }, ticks: { font: { size: 10 }, callback: v => '$' + v } }
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#f3f4f6' },
+                            ticks: {
+                                font: { size: 10 },
+                                callback: v => '$' + v.toLocaleString()
+                            }
+                        }
                     }
                 }
             });
