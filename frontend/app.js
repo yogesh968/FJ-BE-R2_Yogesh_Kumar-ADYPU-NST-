@@ -635,6 +635,7 @@ async function fetchCategories(typeFilter = null) {
             const el = document.getElementById(id);
             if (el) el.innerHTML = options;
         });
+        console.log(typeFilter)
     } catch (err) {
         console.warn('Silent category fetch failure', err);
     }
