@@ -87,7 +87,7 @@ app.get("*", (req, res) => {
 
 // Error handling
 app.use(errorHandler);
-
+console.log("routes are working fine")
 // Global unhandled error logging
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
