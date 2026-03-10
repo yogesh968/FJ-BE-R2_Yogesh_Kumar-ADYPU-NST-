@@ -8,7 +8,7 @@ export class AIController {
         try {
             const { message } = req.body;
             if (!message) {
-                return res.status(400).json(new ApiResponse(400, null, "Message is required"));
+                return res.status(400).json(new ApiResponse(400, null, "Message will be required."));
             }
 
             const response = await aiService.getChatResponse(req.user.id, message);
